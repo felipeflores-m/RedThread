@@ -4,8 +4,8 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/rt_identity
-    username: ${DB_USER:rt_user}
-    password: ${DB_PASS:rt_pass}
+    username: postgres
+    password: 123
   jpa:
     hibernate:
       ddl-auto: validate
@@ -19,4 +19,4 @@ security:
   jwt:
     issuer: redthread-identity
     expiry-minutes: 120
-    secret: ${JWT_SECRET:change-me-super-secret}
+    secret: 8bc5013076fe8a59ccb4ad731e17b757002f0f07588444d66bb95b8c4d32b4e1
