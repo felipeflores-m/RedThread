@@ -1,10 +1,10 @@
-package com.redthread.indetity;
+package com.redthread.identity;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class IndetityServiceApplicationTests {
+class IdentityServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
