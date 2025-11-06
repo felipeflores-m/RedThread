@@ -30,19 +30,40 @@ public class CatalogClient {
   public VariantInfo getVariant(Long variantId) {
     String token = currentToken();
     try {
-      Map<String,Object> m = catalogWebClient.get()
-          .uri("/variants/{id}", variantId)
+      Map<String, Object> m = catalogWebClient.get()
+          .uri("/inventory/by-variant/{id}", variantId)
           .headers(h -> { if (token != null) h.setBearerAuth(token); })
           .accept(MediaType.APPLICATION_JSON)
           .retrieve()
           .bodyToMono(Map.class)
           .block();
+
       if (m == null) return null;
-      BigDecimal price = new BigDecimal(String.valueOf(m.getOrDefault("price", "0")));
-      Integer stock = Integer.valueOf(String.valueOf(m.getOrDefault("availableStock", "0")));
+
+      // Obtener precio desde variant.product.basePrice o priceOverride
+      Map<String, Object> variant = (Map<String, Object>) m.get("variant");
+      BigDecimal price = BigDecimal.ZERO;
+
+      if (variant.containsKey("priceOverride") && variant.get("priceOverride") != null) {
+        price = new BigDecimal(String.valueOf(variant.get("priceOverride")));
+      } else if (variant.containsKey("product")) {
+        Map<String, Object> product = (Map<String, Object>) variant.get("product");
+        if (product.get("basePrice") != null) {
+          price = new BigDecimal(String.valueOf(product.get("basePrice")));
+        }
+      }
+
+     
+      Integer stock = 0;
+      if (m.get("stockAvailable") != null) {
+        stock = Integer.parseInt(String.valueOf(m.get("stockAvailable")));
+      }
+
       return new VariantInfo(variantId, price, stock);
+
     } catch (Exception ex) {
-      return null; // si no existe endpoint, seguimos sin validar previa
+      System.err.println("Error al obtener variant desde Catalog-Service: " + ex.getMessage());
+      return null;
     }
   }
 
@@ -55,7 +76,8 @@ public class CatalogClient {
         .bodyValue(Map.of("variantId", variantId, "delta", delta))
         .retrieve()
         .onStatus(s -> s.is4xxClientError() || s.is5xxServerError(),
-            resp -> resp.bodyToMono(String.class).flatMap(msg -> Mono.error(new IllegalStateException("Catalog adjust error: " + msg))))
+            resp -> resp.bodyToMono(String.class)
+                .flatMap(msg -> Mono.error(new IllegalStateException("Catalog adjust error: " + msg))))
         .toBodilessEntity()
         .block();
   }

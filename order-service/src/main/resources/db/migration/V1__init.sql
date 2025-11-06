@@ -20,6 +20,7 @@ CREATE TABLE carts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
 CREATE UNIQUE INDEX uq_carts_user ON carts(user_id);
 
 -- CartItem
@@ -44,6 +45,7 @@ CREATE TABLE orders (
   total_amount NUMERIC(14,2) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
 CREATE INDEX idx_orders_user ON orders(user_id);
 
 -- OrderItem
@@ -55,10 +57,12 @@ CREATE TABLE order_items (
   unit_price NUMERIC(12,2) NOT NULL,
   line_total NUMERIC(14,2) NOT NULL
 );
+
 CREATE INDEX idx_order_items_order ON order_items(order_id);
 
 -- PaymentAttempt
 CREATE TYPE payment_status AS ENUM ('PENDING','APPROVED','REJECTED');
+
 
 CREATE TABLE payment_attempts (
   id BIGSERIAL PRIMARY KEY,
@@ -67,4 +71,5 @@ CREATE TABLE payment_attempts (
   status payment_status NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
 CREATE INDEX idx_payment_attempts_order ON payment_attempts(order_id);

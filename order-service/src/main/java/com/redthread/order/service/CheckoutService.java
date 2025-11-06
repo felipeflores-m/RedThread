@@ -30,7 +30,7 @@ public class CheckoutService {
     Cart cart = cartRepo.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("Carrito no existe"));
     var items = itemRepo.findByCartId(cart.getId());
     if (items.isEmpty()) throw new IllegalStateException("Carrito vacío");
-    Address address = addressRepo.findByIdAndUserId(req.addressId(), userId)
+    Address address = addressRepo.findByIdAndUserId(req.addressId(), String.valueOf(userId))
         .orElseThrow(() -> new IllegalArgumentException("Address inválida"));
 
     // 1) Validación de stock (best-effort si /variants existe)

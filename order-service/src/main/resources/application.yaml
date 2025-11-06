@@ -23,13 +23,18 @@ management:
       exposure:
         include: health,info
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+
+
 app:
   security:
     jwt:
-      # Se usa este valor, o si está vacío toma el env JWT_SECRET
-      secret: "8bc5013076fe8a59ccb4ad731e17b757002f0f07588444d66bb95b8c4d32b4e1"
+      secret: 8bc5013076fe8a59ccb4ad731e17b757002f0f07588444d66bb95b8c4d32b4e1
   catalog:
-    base-url: "http://localhost:8082"
+    base-url: http://localhost:8082
   http:
     connect-timeout-ms: 3000
     read-timeout-ms: 5000

@@ -20,13 +20,21 @@ public class CheckoutController {
   private final JwtUserResolver auth;
 
   @PostMapping("/checkout")
-  public OrderRes checkout(@Valid @RequestBody CheckoutReq req) {
-    Order o = checkoutService.checkout(auth.currentUserId(), req);
-    return new OrderRes(
-        o.getId(), o.getStatus().name(), o.getTotalAmount(),
-        o.getItems().stream()
-            .map(i -> new OrderItemRes(i.getVariantId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal()))
-            .collect(Collectors.toList())
-    );
-  }
+public OrderRes checkout(@Valid @RequestBody CheckoutReq req) {
+    System.out.println("🔹 Checkout recibido correctamente con addressId=" + req.addressId());
+    try {
+        Order o = checkoutService.checkout(auth.currentUserId(), req);
+        return new OrderRes(
+            o.getId(), o.getStatus().name(), o.getTotalAmount(),
+            o.getItems().stream()
+                .map(i -> new OrderItemRes(i.getVariantId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal()))
+                .collect(Collectors.toList())
+        );
+    } catch (Exception e) {
+        e.printStackTrace(); 
+        throw e;
+    }
+}
+
+
 }

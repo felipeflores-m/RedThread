@@ -28,9 +28,14 @@ public class SecurityConfig {
   }
 
   @Bean
-  public JwtDecoder jwtDecoder() {
-    return NimbusJwtDecoder.withSecretKey(new SecretKeySpec(resolveSecret(), "HmacSHA256")).build();
-  }
+public JwtDecoder jwtDecoder() {
+    byte[] keyBytes = resolveSecret();
+    SecretKeySpec key = new SecretKeySpec(keyBytes, "HmacSHA256");
+    return NimbusJwtDecoder.withSecretKey(key)
+        .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+        .build();
+}
+
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
