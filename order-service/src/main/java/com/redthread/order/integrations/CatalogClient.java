@@ -27,7 +27,7 @@ public class CatalogClient {
 
   public record VariantInfo(Long id, BigDecimal price, Integer availableStock) {}
 
-  public VariantInfo getVariant(Long variantId) {
+  public VariantInfo findVariantById(Long variantId) {
     String token = currentToken();
     try {
       Map<String, Object> m = catalogWebClient.get()
@@ -40,20 +40,20 @@ public class CatalogClient {
 
       if (m == null) return null;
 
-      // Obtener precio desde variant.product.basePrice o priceOverride
       Map<String, Object> variant = (Map<String, Object>) m.get("variant");
+      if (variant == null) return null;
+
       BigDecimal price = BigDecimal.ZERO;
 
       if (variant.containsKey("priceOverride") && variant.get("priceOverride") != null) {
         price = new BigDecimal(String.valueOf(variant.get("priceOverride")));
       } else if (variant.containsKey("product")) {
         Map<String, Object> product = (Map<String, Object>) variant.get("product");
-        if (product.get("basePrice") != null) {
+        if (product != null && product.get("basePrice") != null) {
           price = new BigDecimal(String.valueOf(product.get("basePrice")));
         }
       }
 
-     
       Integer stock = 0;
       if (m.get("stockAvailable") != null) {
         stock = Integer.parseInt(String.valueOf(m.get("stockAvailable")));
@@ -62,11 +62,12 @@ public class CatalogClient {
       return new VariantInfo(variantId, price, stock);
 
     } catch (Exception ex) {
-      System.err.println("Error al obtener variant desde Catalog-Service: " + ex.getMessage());
+      System.err.println(" Error al obtener variant desde Catalog-Service: " + ex.getMessage());
       return null;
     }
   }
 
+  
   public void adjustStock(Long variantId, int delta) {
     String token = currentToken();
     catalogWebClient.post()

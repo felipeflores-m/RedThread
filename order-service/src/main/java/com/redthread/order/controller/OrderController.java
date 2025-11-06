@@ -24,9 +24,16 @@ public class OrderController {
   public List<OrderRes> list() {
     return orderService.listByUser(auth.currentUserId()).stream().map(o ->
         new OrderRes(
-            o.getId(), o.getStatus().name(), o.getTotalAmount(),
+            o.getId(),
+            o.getStatus().name(),
+            o.getTotalAmount(),
             o.getItems().stream().map(i ->
-                new OrderItemRes(i.getVariantId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())
+                new OrderItemRes(
+                    i.getVariantId(),
+                    i.getQuantity(),
+                    i.getUnitPrice(),
+                    i.getLineTotal()
+                )
             ).toList()
         )
     ).toList();
@@ -36,9 +43,16 @@ public class OrderController {
   public OrderRes detail(@PathVariable Long id) {
     Order o = orderService.getByIdForUser(id, auth.currentUserId());
     return new OrderRes(
-        o.getId(), o.getStatus().name(), o.getTotalAmount(),
+        o.getId(),
+        o.getStatus().name(),
+        o.getTotalAmount(),
         o.getItems().stream().map(i ->
-            new OrderItemRes(i.getVariantId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())
+            new OrderItemRes(
+                i.getVariantId(),
+                i.getQuantity(),
+                i.getUnitPrice(),
+                i.getLineTotal()
+            )
         ).toList()
     );
   }
@@ -47,14 +61,36 @@ public class OrderController {
   public OrderRes pay(@PathVariable Long id, @Valid @RequestBody(required = false) PayReq req) {
     String provider = (req == null) ? null : req.provider();
     Order o = orderService.pay(auth.currentUserId(), id, provider);
-    return new OrderRes(o.getId(), o.getStatus().name(), o.getTotalAmount(),
-        o.getItems().stream().map(i -> new OrderItemRes(i.getVariantId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList());
+    return new OrderRes(
+        o.getId(),
+        o.getStatus().name(),
+        o.getTotalAmount(),
+        o.getItems().stream().map(i ->
+            new OrderItemRes(
+                i.getVariantId(),
+                i.getQuantity(),
+                i.getUnitPrice(),
+                i.getLineTotal()
+            )
+        ).toList()
+    );
   }
 
   @PostMapping("/{id}/cancel")
   public OrderRes cancel(@PathVariable Long id) {
     Order o = orderService.cancel(auth.currentUserId(), id);
-    return new OrderRes(o.getId(), o.getStatus().name(), o.getTotalAmount(),
-        o.getItems().stream().map(i -> new OrderItemRes(i.getVariantId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal())).toList());
+    return new OrderRes(
+        o.getId(),
+        o.getStatus().name(),
+        o.getTotalAmount(),
+        o.getItems().stream().map(i ->
+            new OrderItemRes(
+                i.getVariantId(),
+                i.getQuantity(),
+                i.getUnitPrice(),
+                i.getLineTotal()
+            )
+        ).toList()
+    );
   }
 }

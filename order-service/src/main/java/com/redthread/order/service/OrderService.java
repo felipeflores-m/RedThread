@@ -14,18 +14,23 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+
   private final OrderRepository orderRepo;
   private final OrderItemRepository itemRepo;
   private final PaymentAttemptRepository payRepo;
   private final CatalogClient catalog;
 
   public List<Order> listByUser(String userId) {
-    return orderRepo.findByUserIdOrderByIdDesc(userId);
+    var orders = orderRepo.findByUserIdOrderByIdDesc(userId);
+    orders.forEach(o -> o.setItems(itemRepo.findByOrderId(o.getId())));
+    return orders;
   }
 
   public Order getByIdForUser(Long id, String userId) {
-    return orderRepo.findByIdAndUserId(id, userId)
+    var order = orderRepo.findByIdAndUserId(id, userId)
         .orElseThrow(() -> new IllegalArgumentException("Order no encontrada"));
+    order.setItems(itemRepo.findByOrderId(order.getId())); 
+    return order;
   }
 
   @Transactional
@@ -33,10 +38,14 @@ public class OrderService {
     Order order = getByIdForUser(orderId, userId);
     if (order.getStatus() != OrderStatus.CREATED)
       throw new IllegalStateException("Solo CREATED puede pagarse");
-    // Simular aprobación
+
     payRepo.save(PaymentAttempt.builder()
-        .order(order).provider(provider).status(PaymentStatus.APPROVED)
-        .createdAt(java.time.Instant.now()).build());
+        .order(order)
+        .provider(provider)
+        .status(PaymentStatus.APPROVED)
+        .createdAt(java.time.Instant.now())
+        .build());
+
     order.setStatus(OrderStatus.PAID);
     return orderRepo.save(order);
   }
@@ -49,7 +58,6 @@ public class OrderService {
       throw new IllegalStateException("Solo CREATED o PAID se pueden cancelar");
 
     var items = itemRepo.findByOrderId(order.getId());
-    // Reponer stock (delta positivo)
     for (var it : items) {
       catalog.adjustStock(it.getVariantId(), +it.getQuantity());
     }

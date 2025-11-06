@@ -49,32 +49,31 @@ public class CartService {
     return new CartRes(c.getId(), resItems, total);
   }
 
-    @Transactional
-    public CartRes addItem(String userId, AddItemReq req) {
+  @Transactional
+  public CartRes addItem(String userId, AddItemReq req) {
     Cart c = requireCart(userId);
 
-    // precio desde Catalog (si disponible)
-    var info = catalog.getVariant(req.variantId());
+    var info = catalog.findVariantById(req.variantId());
     BigDecimal computedUnit = (info != null && info.price() != null) ? info.price() : BigDecimal.ZERO;
+    if (computedUnit.compareTo(BigDecimal.ZERO) == 0) {
+      throw new IllegalStateException("Precio no disponible para este variant");
+    }
 
-    // --- capturas efectivamente finales para usarlas en lambdas ---
     final Long cartId = c.getId();
     final Long fVariantId = req.variantId();
     final Integer fQty = req.quantity();
     final BigDecimal fUnit = computedUnit;
-    // ---------------------------------------------------------------
 
     CartItem item = itemRepo.findByCartIdAndVariantId(cartId, fVariantId)
         .map(existing -> {
-            existing.setQuantity(existing.getQuantity() + fQty);
-            // si vino precio válido desde catálogo, lo actualizamos; si no, conservamos el previo
-            if (fUnit != null && fUnit.compareTo(BigDecimal.ZERO) > 0) {
+          existing.setQuantity(existing.getQuantity() + fQty);
+          if (fUnit != null && fUnit.compareTo(BigDecimal.ZERO) > 0) {
             existing.setUnitPrice(fUnit);
-            }
-            return existing;
+          }
+          return existing;
         })
         .orElseGet(() -> CartItem.builder()
-            .cart(c)                 // 'c' es efectivamente final (no reasignado)
+            .cart(c)
             .variantId(fVariantId)
             .quantity(fQty)
             .unitPrice((fUnit != null) ? fUnit : BigDecimal.ZERO)
@@ -83,7 +82,7 @@ public class CartService {
     itemRepo.save(item);
     c.setUpdatedAt(Instant.now());
     return getCart(userId);
-}
+  }
 
   @Transactional
   public CartRes updateItem(String userId, Long itemId, UpdateQtyReq req) {
