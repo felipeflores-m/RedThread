@@ -7,16 +7,17 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class SecurityConfig {
 
-    // 1) Lee de application.yml (app.security.jwt.secret)
-    // 2) Si no existe, usa la env var JWT_SECRET
     @Value("${app.security.jwt.secret:${JWT_SECRET:}}")
     private String jwtSecret;
 
@@ -25,9 +26,10 @@ public class SecurityConfig {
     @PostConstruct
     void init() {
         if (jwtSecret == null || jwtSecret.isBlank()) {
-            throw new IllegalStateException("JWT secret no configurado. Define 'app.security.jwt.secret' en application.yml o la variable de entorno JWT_SECRET.");
+            throw new IllegalStateException("JWT secret no configurado.");
         }
-        this.secretKey = KeyUtils.hmacKey(jwtSecret); // HmacSHA256
+        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        this.secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
     }
 
     @Bean
@@ -35,8 +37,11 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(reg -> reg
+                // REGLA #1: /media/** sigue siendo público
                 .requestMatchers("/media/**").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
+                
+                // REGLA #2: Todas las demás rutas (incluyendo /actuator/health)
+                // ahora DEBEN estar autenticadas.
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
@@ -45,7 +50,9 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        // HS256 se selecciona automáticamente con clave de 256 bits
-        return NimbusJwtDecoder.withSecretKey(this.secretKey).build();
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(this.secretKey).build();
+        decoder.setJwtValidator(JwtValidators.createDefault());
+        return decoder;
     }
+
 }

@@ -5,10 +5,12 @@ import lombok.*;
 
 import java.time.Instant;
 
-@Entity @Table(name = "brands")
+@Entity
+@Table(name = "brands")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Brand {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable=false, unique=true, length=120)
@@ -17,6 +19,11 @@ public class Brand {
     @Column(nullable=false)
     private boolean active = true;
 
-    @Column(name="created_at", nullable=false)
-    private Instant createdAt = Instant.now();
+    @Column(name="created_at", nullable=false, updatable=false)
+    private Instant createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = Instant.now();
+    }
 }

@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets; // <-- IMPORTACIÓN AÑADIDA
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -24,7 +25,8 @@ public class JwtService {
 
     @PostConstruct
     void init() {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+        // LÍNEA MODIFICADA para usar UTF-8
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generate(User user) {

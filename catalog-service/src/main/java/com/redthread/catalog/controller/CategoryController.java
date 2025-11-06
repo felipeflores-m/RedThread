@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/categories")
-@RequiredArgsConstructor
 public class CategoryController {
+
     private final CategoryService service;
-    private final CategoryRepository repo;
 
     @PostMapping
     public Category create(@RequestBody @Valid CreateCategoryReq req) {
@@ -23,8 +23,18 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> list() { return repo.findAll(); }
+    public List<Category> list() {
+        return service.getAll();
+    }
 
     @GetMapping("/{id}")
-    public Category get(@PathVariable Long id) { return service.get(id); }
+    public Category get(@PathVariable Long id) {
+        return service.get(id);
+    }
+
+    @PutMapping("/{id}")
+    public Category update(@PathVariable Long id, @RequestBody @Valid CreateCategoryReq req) {
+        return service.update(id, req.name(), req.description());
+    }
+
 }

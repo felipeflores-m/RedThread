@@ -12,10 +12,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class ImageStorageService {
 
     @Value("${app.media.upload-dir:./uploads}")
@@ -28,8 +30,10 @@ public class ImageStorageService {
     private final ProductImageRepository imageRepo;
 
     public ProductImage store(Long productId, MultipartFile file, boolean primary) throws IOException {
-        Product p = productRepo.findById(productId).orElseThrow(() -> new EntityNotFoundException("Producto no existe"));
-        if (file.isEmpty()) throw new IllegalArgumentException("Archivo vacío");
+        Product p = productRepo.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Producto no existe"));
+        if (file.isEmpty())
+            throw new IllegalArgumentException("Archivo vacío");
 
         String ext = getExt(file.getOriginalFilename());
         String name = UUID.randomUUID() + (ext.isBlank() ? "" : "." + ext);
@@ -38,10 +42,11 @@ public class ImageStorageService {
         Path target = productFolder.resolve(name);
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
-        String rel = Path.of("products", String.valueOf(productId), name).toString().replace("\\","/");
+        String rel = Path.of("products", String.valueOf(productId), name).toString().replace("\\", "/");
         String publicUrl = publicPrefix + "/" + rel;
 
-        if (primary) unsetPrimary(productId);
+        if (primary)
+            unsetPrimary(productId);
 
         int order = imageRepo.findByProductIdOrderBySortOrderAsc(productId).size();
 
@@ -51,6 +56,7 @@ public class ImageStorageService {
                 .publicUrl(publicUrl)
                 .primary(primary)
                 .sortOrder(order)
+                .createdAt(Instant.now())
                 .build();
 
         return imageRepo.save(img);
@@ -59,52 +65,57 @@ public class ImageStorageService {
     public void unsetPrimary(Long productId) {
         List<ProductImage> imgs = imageRepo.findByProductIdOrderBySortOrderAsc(productId);
         for (ProductImage im : imgs) {
-            if (im.isPrimary()) { im.setPrimary(false); imageRepo.save(im); }
+            if (im.isPrimary()) {
+                im.setPrimary(false);
+                imageRepo.save(im);
+            }
         }
     }
 
     public ProductImage setPrimary(Long imageId) {
-        ProductImage img = imageRepo.findById(imageId).orElseThrow(() -> new EntityNotFoundException("Imagen no existe"));
+        ProductImage img = imageRepo.findById(imageId)
+                .orElseThrow(() -> new EntityNotFoundException("Imagen no existe"));
         unsetPrimary(img.getProduct().getId());
         img.setPrimary(true);
         return imageRepo.save(img);
     }
 
     public void delete(Long imageId) throws IOException {
-        ProductImage img = imageRepo.findById(imageId).orElseThrow(() -> new EntityNotFoundException("Imagen no existe"));
+        ProductImage img = imageRepo.findById(imageId)
+                .orElseThrow(() -> new EntityNotFoundException("Imagen no existe"));
         try {
             Files.deleteIfExists(Path.of(img.getFilePath()));
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         imageRepo.deleteById(imageId);
     }
-
-    // Mock "presign": devolvemos un key y el path final esperado (para front que usa confirm).
     public String presignKey(Long productId, String originalFilename) {
         String ext = getExt(originalFilename);
         return "products/" + productId + "/" + UUID.randomUUID() + (ext.isBlank() ? "" : "." + ext);
     }
 
     public ProductImage confirm(Long productId, String key) {
-        // En local no hay subida externa. Confirm solo registra una "imagen lógica" si el archivo ya fue subido por otro flujo.
-        // Para simplificar, creamos un registro vacío (apunta a ruta local si existe).
-        Product p = productRepo.findById(productId).orElseThrow(() -> new EntityNotFoundException("Producto no existe"));
+        Product p = productRepo.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Producto no existe"));
         Path finalPath = Path.of(uploadDir, key);
-        String publicUrl = (publicPrefix + "/" + key).replace("\\","/");
+        String publicUrl = (publicPrefix + "/" + key).replace("\\", "/");
         int order = imageRepo.findByProductIdOrderBySortOrderAsc(productId).size();
 
         ProductImage img = ProductImage.builder()
                 .product(p)
                 .filePath(finalPath.toAbsolutePath().toString())
                 .publicUrl(publicUrl)
-                .primary(order == 0)  // primera confirmada queda como primaria
+                .primary(order == 0) 
                 .sortOrder(order)
+                .createdAt(Instant.now())
                 .build();
         return imageRepo.save(img);
     }
 
     private String getExt(String name) {
-        if (name == null) return "";
+        if (name == null)
+            return "";
         int i = name.lastIndexOf('.');
-        return (i >= 0 && i < name.length()-1) ? name.substring(i+1).toLowerCase() : "";
+        return (i >= 0 && i < name.length() - 1) ? name.substring(i + 1).toLowerCase() : "";
     }
 }

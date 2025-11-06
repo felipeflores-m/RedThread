@@ -4,12 +4,16 @@ import com.redthread.catalog.model.*;
 import com.redthread.catalog.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class ProductService {
     private final ProductRepository productRepo;
     private final CategoryRepository categoryRepo;
@@ -17,12 +21,15 @@ public class ProductService {
 
     public Product create(Long categoryId, Long brandId, String name, String description, BigDecimal basePrice) {
         Category cat = categoryRepo.findById(categoryId)
-                .orElseThrow(() -> new EntityNotFoundException("Categoria no existe"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoría no existe"));
         Brand brand = null;
         if (brandId != null) {
-            brand = brandRepo.findById(brandId).orElseThrow(() -> new EntityNotFoundException("Marca no existe"));
+            brand = brandRepo.findById(brandId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Marca no existe"));
         }
-        if (basePrice == null || basePrice.signum() < 0) throw new IllegalArgumentException("Precio base inválido");
+        if (basePrice == null || basePrice.signum() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Precio base inválido");
+        }
 
         Product p = Product.builder()
                 .category(cat)
@@ -32,6 +39,7 @@ public class ProductService {
                 .basePrice(basePrice)
                 .active(true)
                 .build();
+
         return productRepo.save(p);
     }
 
@@ -42,4 +50,5 @@ public class ProductService {
     public List<Product> byCategory(Long categoryId) {
         return productRepo.findByCategoryId(categoryId);
     }
+
 }
