@@ -1,29 +1,94 @@
 package com.redthread.identity.util;
 
 import com.redthread.identity.model.Role;
+import com.redthread.identity.model.User;
 import com.redthread.identity.repository.RoleRepository;
+import com.redthread.identity.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
-    private final RoleRepository roles;
 
-    public DataInitializer(RoleRepository roles) { this.roles = roles; }
+    private final RoleRepository roleRepo;
+    private final UserRepository userRepo;
+
+    public DataInitializer(RoleRepository roleRepo, UserRepository userRepo) {
+        this.roleRepo = roleRepo;
+        this.userRepo = userRepo;
+    }
 
     @Override
     public void run(String... args) {
-        ensure("CLIENTE", "Cliente");
-        ensure("VENDEDOR", "Vendedor");
-        ensure("REPARTIDOR", "Repartidor");
-        ensure("ADMIN", "Administrador");
+        System.out.println("Inicializando datos base...");
+
+        // --- 1. Crear roles si no existen ---
+        ensureRole("CLIENTE", "Cliente");
+        ensureRole("VENDEDOR", "Vendedor");
+        ensureRole("REPARTIDOR", "Repartidor");
+        ensureRole("ADMIN", "Administrador");
+
+        // --- 2. Crear usuarios base ---
+        ensureAdmin();
+        ensureVendedor();
+        ensureRepartidor();
+
+        System.out.println("Inicialización completa.");
     }
 
-    private void ensure(String key, String name) {
-        roles.findByKey(key).orElseGet(() -> {
+    private void ensureRole(String key, String name) {
+        roleRepo.findByKey(key).orElseGet(() -> {
             Role r = new Role();
-            r.setKey(key); r.setName(name);
-            return roles.save(r);
+            r.setKey(key);
+            r.setName(name);
+            roleRepo.save(r);
+            System.out.println("🔸 Rol creado: " + key);
+            return r;
+        });
+    }
+
+    private void ensureAdmin() {
+        createUserIfNotExists(
+                "admin@redthread.cl",
+                "123456",
+                "Admin Root",
+                "ADMIN"
+        );
+    }
+
+    private void ensureVendedor() {
+        createUserIfNotExists(
+                "vendedor@redthread.cl",
+                "123456",
+                "Vendedor Oficial",
+                "VENDEDOR"
+        );
+    }
+
+    private void ensureRepartidor() {
+        createUserIfNotExists(
+                "repartidor@redthread.cl",
+                "123456",
+                "Repartidor General",
+                "REPARTIDOR"
+        );
+    }
+
+    private void createUserIfNotExists(String email, String rawPassword, String fullName, String roleKey) {
+        userRepo.findByEmail(email).orElseGet(() -> {
+            var role = roleRepo.findByKey(roleKey)
+                    .orElseThrow(() -> new IllegalStateException("El rol " + roleKey + " no existe"));
+            User u = new User();
+            u.setEmail(email);
+            u.setFullName(fullName);
+            u.setPasswordHash(new BCryptPasswordEncoder().encode(rawPassword));
+            u.setRoles(Set.of(role));
+            userRepo.save(u);
+            System.out.println("👤 Usuario creado: " + email + " [" + roleKey + "]");
+            return u;
         });
     }
 }

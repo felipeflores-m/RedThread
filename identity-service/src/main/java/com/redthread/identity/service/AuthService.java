@@ -44,12 +44,19 @@ public class AuthService {
     }
 
     public JwtResponse login(LoginRequest req) {
-        var u = userRepo.findByEmail(req.getEmail().toLowerCase())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
-        if (!encoder.matches(req.getPassword(), u.getPasswordHash())) {
-            throw new IllegalArgumentException("Credenciales inválidas");
-        }
-        String token = jwt.generate(u);
-        return new JwtResponse(token, Instant.now().plusSeconds(60L*60L*2L));
+    var u = userRepo.findByEmail(req.getEmail().toLowerCase())
+            .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
+
+    // 👇 Agrega esta línea aquí
+    System.out.println("Password encoder usado: " + encoder.getClass().getName());
+
+    if (!encoder.matches(req.getPassword(), u.getPasswordHash())) {
+        throw new IllegalArgumentException("Credenciales inválidas");
     }
+
+    String token = jwt.generate(u);
+    return new JwtResponse(token, Instant.now().plusSeconds(60L * 60L * 2L));
+}
+
+    
 }
