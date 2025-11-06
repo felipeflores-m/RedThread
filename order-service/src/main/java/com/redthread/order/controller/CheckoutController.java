@@ -1,0 +1,32 @@
+package com.redthread.order.controller;
+
+import com.redthread.order.dto.CheckoutReq;
+import com.redthread.order.dto.OrderItemRes;
+import com.redthread.order.dto.OrderRes;
+import com.redthread.order.model.Order;
+import com.redthread.order.security.JwtUserResolver;
+import com.redthread.order.service.CheckoutService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
+
+@RestController
+@RequiredArgsConstructor
+public class CheckoutController {
+
+  private final CheckoutService checkoutService;
+  private final JwtUserResolver auth;
+
+  @PostMapping("/checkout")
+  public OrderRes checkout(@Valid @RequestBody CheckoutReq req) {
+    Order o = checkoutService.checkout(auth.currentUserId(), req);
+    return new OrderRes(
+        o.getId(), o.getStatus().name(), o.getTotalAmount(),
+        o.getItems().stream()
+            .map(i -> new OrderItemRes(i.getVariantId(), i.getQuantity(), i.getUnitPrice(), i.getLineTotal()))
+            .collect(Collectors.toList())
+    );
+  }
+}
