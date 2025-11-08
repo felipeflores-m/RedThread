@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthApi } from "@/api/auth.api";
 import { useAuth } from "@/store/auth.store";
+import axios from "axios";
 
 export default function Login() {
   const nav = useNavigate();
@@ -12,19 +13,34 @@ export default function Login() {
   const [err, setErr] = useState("");
 
   const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setLoading(true); setErr("");
-      const { data } = await AuthApi.login({ email, password });
-      setTokens(data.accessToken, data.refreshToken);
-      await loadMe();
-      nav("/catalog");
-    } catch (e: any) {
-      setErr(e?.response?.data?.message ?? "Credenciales inválidas");
-    } finally {
-      setLoading(false);
-    }
-  };
+  e.preventDefault();
+  try {
+  setLoading(true);
+  setErr("");
+  const { data } = await AuthApi.login({ email, password });
+
+  setTokens(data.accessToken, data.refreshToken);
+
+localStorage.setItem("rt.access", data.accessToken ?? "");
+localStorage.setItem("rt.refresh", data.refreshToken ?? "");
+
+
+  await loadMe();
+  const user = useAuth.getState().user;
+
+  if (user?.roles?.includes("ADMIN")) nav("/admin");
+  else nav("/");
+} catch (err) {
+  if (axios.isAxiosError(err)) {
+    setErr(err.response?.data?.message ?? "Credenciales inválidas");
+  } else {
+    setErr("Error desconocido");
+  }
+} finally {
+  setLoading(false);
+}
+
+};
 
   return (
     <div className="mx-auto max-w-md">

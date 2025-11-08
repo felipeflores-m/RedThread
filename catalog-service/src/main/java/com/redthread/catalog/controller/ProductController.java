@@ -22,13 +22,16 @@ public class ProductController {
         return service.create(req.categoryId(), req.brandId(), req.name(), req.description(), req.basePrice());
     }
 
-    @GetMapping("/{id}")
-    public Product get(@PathVariable Long id) {
-        return service.get(id);
+    @PutMapping("/{id}")
+    public Product update(@PathVariable Long id, @RequestBody @Valid CreateProductReq req) {
+        return service.update(id, req.categoryId(), req.brandId(), req.name(), req.description(), req.basePrice());
     }
 
     @GetMapping
     public List<Product> list(@RequestParam(required = false) Long categoryId) {
         return (categoryId == null) ? repo.findAll() : service.byCategory(categoryId);
     }
+
+    
+
 }

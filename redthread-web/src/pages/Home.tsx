@@ -47,7 +47,6 @@ export default function Home() {
                             </p>
                             <div className="mt-6 flex flex-wrap gap-3">
                                 <a href="/catalog" className="btn btn-primary">Ver catálogo</a>
-                                <a href="/register" className="btn border border-neutral-700 hover:bg-neutral-900">Crear cuenta</a>
                             </div>
                         </div>
 

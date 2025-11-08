@@ -29,16 +29,20 @@ public class ImageStorageService {
     private final ProductRepository productRepo;
     private final ProductImageRepository imageRepo;
 
+    // === Subir desde un archivo local (multipart) ===
     public ProductImage store(Long productId, MultipartFile file, boolean primary) throws IOException {
         Product p = productRepo.findById(productId)
                 .orElseThrow(() -> new EntityNotFoundException("Producto no existe"));
+
         if (file.isEmpty())
             throw new IllegalArgumentException("Archivo vacío");
 
         String ext = getExt(file.getOriginalFilename());
         String name = UUID.randomUUID() + (ext.isBlank() ? "" : "." + ext);
+
         Path productFolder = Path.of(uploadDir, "products", String.valueOf(productId));
         Files.createDirectories(productFolder);
+
         Path target = productFolder.resolve(name);
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
@@ -62,6 +66,44 @@ public class ImageStorageService {
         return imageRepo.save(img);
     }
 
+    // === NUEVO: guardar desde un archivo descargado (URL remota) ===
+    public ProductImage storeFromPath(Long productId, Path path, boolean primary) throws IOException {
+        Product p = productRepo.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Producto no existe"));
+
+        if (!Files.exists(path))
+            throw new IllegalArgumentException("Archivo no encontrado: " + path);
+
+        String name = UUID.randomUUID() + "." + getExt(path.getFileName().toString());
+
+        Path productFolder = Path.of(uploadDir, "products", String.valueOf(productId));
+        Files.createDirectories(productFolder);
+
+        Path target = productFolder.resolve(name);
+        Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING);
+
+        String rel = Path.of("products", String.valueOf(productId), name)
+                .toString().replace("\\", "/");
+        String publicUrl = publicPrefix + "/" + rel;
+
+        if (primary)
+            unsetPrimary(productId);
+
+        int order = imageRepo.findByProductIdOrderBySortOrderAsc(productId).size();
+
+        ProductImage img = ProductImage.builder()
+                .product(p)
+                .filePath(target.toAbsolutePath().toString())
+                .publicUrl(publicUrl)
+                .primary(primary)
+                .sortOrder(order)
+                .createdAt(Instant.now())
+                .build();
+
+        return imageRepo.save(img);
+    }
+
+    // === Auxiliares ===
     public void unsetPrimary(Long productId) {
         List<ProductImage> imgs = imageRepo.findByProductIdOrderBySortOrderAsc(productId);
         for (ProductImage im : imgs) {
@@ -89,6 +131,7 @@ public class ImageStorageService {
         }
         imageRepo.deleteById(imageId);
     }
+
     public String presignKey(Long productId, String originalFilename) {
         String ext = getExt(originalFilename);
         return "products/" + productId + "/" + UUID.randomUUID() + (ext.isBlank() ? "" : "." + ext);
@@ -105,10 +148,11 @@ public class ImageStorageService {
                 .product(p)
                 .filePath(finalPath.toAbsolutePath().toString())
                 .publicUrl(publicUrl)
-                .primary(order == 0) 
+                .primary(order == 0)
                 .sortOrder(order)
                 .createdAt(Instant.now())
                 .build();
+
         return imageRepo.save(img);
     }
 

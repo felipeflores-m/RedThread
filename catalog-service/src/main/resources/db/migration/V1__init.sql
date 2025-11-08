@@ -1,5 +1,5 @@
 -- Limpieza defensiva
-DROP TABLE IF EXISTS product_images CASCADE;
+DROP TABLE IF EXISTS product_images CASCADE; 
 DROP TABLE IF EXISTS inventory CASCADE;
 DROP TABLE IF EXISTS variants CASCADE;
 DROP TABLE IF EXISTS products CASCADE;

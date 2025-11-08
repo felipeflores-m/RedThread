@@ -51,4 +51,31 @@ public class ProductService {
         return productRepo.findByCategoryId(categoryId);
     }
 
+    public Product update(Long id, Long categoryId, Long brandId, String name, String description, BigDecimal basePrice) {
+    Product existing = productRepo.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Producto no existe"));
+
+    Category cat = categoryRepo.findById(categoryId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoría no existe"));
+
+    Brand brand = null;
+    if (brandId != null) {
+        brand = brandRepo.findById(brandId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Marca no existe"));
+    }
+
+    if (basePrice == null || basePrice.signum() < 0) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Precio base inválido");
+    }
+
+    existing.setCategory(cat);
+    existing.setBrand(brand);
+    existing.setName(name.trim());
+    existing.setDescription(description);
+    existing.setBasePrice(basePrice);
+
+    return productRepo.save(existing);
+}
+
+
 }

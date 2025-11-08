@@ -1,8 +1,10 @@
 import axios from "axios";
 
-const authBase     = import.meta.env.VITE_AUTH_API as string;
-const catalogBase  = import.meta.env.VITE_CATALOG_API as string;
-const orderBase    = import.meta.env.VITE_ORDER_API as string;
+console.log("Auth API base:", import.meta.env.VITE_AUTH_API);
+
+const authBase = import.meta.env.VITE_AUTH_API as string;
+const catalogBase = import.meta.env.VITE_CATALOG_API as string;
+const orderBase = import.meta.env.VITE_ORDER_API as string;
 const deliveryBase = import.meta.env.VITE_DELIVERY_API as string;
 
 export const http = {
@@ -12,11 +14,11 @@ export const http = {
   delivery: axios.create({ baseURL: deliveryBase, withCredentials: false }),
 };
 
-// Interceptor para JWT (si tu auth emite accessToken)
+// === Interceptor para JWT ===
 const getToken = () => localStorage.getItem("rt.access") ?? "";
 
 for (const key of Object.keys(http) as Array<keyof typeof http>) {
-  http[key].interceptors.request.use(cfg => {
+  http[key].interceptors.request.use((cfg) => {
     const token = getToken();
     if (token) cfg.headers.Authorization = `Bearer ${token}`;
     return cfg;

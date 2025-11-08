@@ -25,13 +25,11 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         System.out.println("Inicializando datos base...");
 
-        // --- 1. Crear roles si no existen ---
         ensureRole("CLIENTE", "Cliente");
         ensureRole("VENDEDOR", "Vendedor");
         ensureRole("REPARTIDOR", "Repartidor");
         ensureRole("ADMIN", "Administrador");
 
-        // --- 2. Crear usuarios base ---
         ensureAdmin();
         ensureVendedor();
         ensureRepartidor();
@@ -84,7 +82,7 @@ public class DataInitializer implements CommandLineRunner {
             User u = new User();
             u.setEmail(email);
             u.setFullName(fullName);
-            u.setPasswordHash(new BCryptPasswordEncoder().encode(rawPassword));
+            u.setPassword(new BCryptPasswordEncoder().encode(rawPassword)); // ← cambiado
             u.setRoles(Set.of(role));
             userRepo.save(u);
             System.out.println("👤 Usuario creado: " + email + " [" + roleKey + "]");

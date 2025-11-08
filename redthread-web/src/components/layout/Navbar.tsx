@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/store/auth.store";
 
 export default function Navbar() {
+  const { user, logout } = useAuth();
+  const isLogged = !!user;
+
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-800/80 bg-[rgba(12,12,12,0.7)] backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-3 flex items-center gap-6">
@@ -25,22 +29,52 @@ export default function Navbar() {
               placeholder="Buscar productos…"
             />
             <svg className="absolute left-2.5 top-2.5 h-4 w-4 text-white/50" viewBox="0 0 24 24" fill="none">
-              <path d="M21 21l-4.3-4.3m1.8-5.2a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path
+                d="M21 21l-4.3-4.3m1.8-5.2a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
         </div>
 
         {/* Acciones */}
         <div className="hidden sm:flex items-center gap-3">
-          <Link to="/cart" className="inline-flex items-center rounded-md border border-neutral-800 px-3 py-2 text-sm text-white/90 hover:bg-neutral-900">
+          <Link
+            to="/cart"
+            className="inline-flex items-center rounded-md border border-neutral-800 px-3 py-2 text-sm text-white/90 hover:bg-neutral-900"
+          >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none">
-              <path d="M3 3h2l.4 2M7 13h9l3-7H6.4M7 13l-1.2 6H19M7 13l-2-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path
+                d="M3 3h2l.4 2M7 13h9l3-7H6.4M7 13l-1.2 6H19M7 13l-2-8"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             Carrito
           </Link>
-          <Link to="/login" className="inline-flex items-center rounded-md bg-[#D32F2F] px-3 py-2 text-sm font-medium text-white hover:bg-[#b72a2a]">
-            Entrar
-          </Link>
+
+          {/* Botón dinámico */}
+          {isLogged ? (
+            <button
+              onClick={logout}
+              className="btn btn-danger"
+              style={{ backgroundColor: "#D32F2F", border: "none" }}
+            >
+              Cerrar sesión
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="btn btn-danger"
+              style={{ backgroundColor: "#D32F2F", border: "none" }}
+            >
+              Iniciar sesión
+            </Link>
+          )}
         </div>
       </div>
     </header>
