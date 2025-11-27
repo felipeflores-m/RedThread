@@ -30,6 +30,12 @@ CREATE TABLE products (
     description TEXT,
     base_price NUMERIC(12,2) NOT NULL CHECK (base_price >= 0),
     active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    featured BOOLEAN NOT NULL DEFAULT FALSE,
+
+    gender VARCHAR(10) NOT NULL DEFAULT 'HOMBRE',
+    CONSTRAINT products_gender_chk CHECK (gender IN ('HOMBRE', 'MUJER')),
+
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -74,6 +80,9 @@ CREATE TABLE product_images (
 
 -- Índices
 CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_featured ON products(featured);
+CREATE INDEX idx_products_gender ON products(gender);
+
 CREATE INDEX idx_variants_product ON variants(product_id);
 CREATE INDEX idx_inventory_variant ON inventory(variant_id);
 CREATE INDEX idx_images_product ON product_images(product_id);
