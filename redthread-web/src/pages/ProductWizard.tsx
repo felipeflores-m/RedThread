@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CatalogApi } from "@/api/catalog.api";
 import type { Category, Brand } from "@/api/catalog.api";
+import type { AxiosError } from "axios";
 
 function generateSku(sizeValue: string, color: string, sizeType: string) {
   const clean = (txt: string) =>
@@ -33,7 +34,6 @@ export default function ProductWizard() {
     sizeValue: "",
     color: "",
     sku: "",
-    priceOverride: "",
     stock: 0,
   });
 
@@ -63,13 +63,12 @@ export default function ProductWizard() {
       const payload = {
         categoryId: form.categoryId,
         brandId: form.brandId,
-      name: form.nombre,
-  description: form.descripcion,
-  basePrice: Number(form.precioBase),
-  featured: form.featured,
-  gender: form.gender
-};
-
+        name: form.nombre,
+        description: form.descripcion,
+        basePrice: Number(form.precioBase),
+        featured: form.featured,
+        gender: form.gender,
+      };
 
       const res = await CatalogApi.createProduct(payload);
 
@@ -77,21 +76,19 @@ export default function ProductWizard() {
       alert("Producto creado correctamente. Ahora agrega una variante.");
       setStep(2);
     } catch (err: unknown) {
-      const error = err as {
-        response?: { data?: { message?: string; error?: string } };
-        message?: string;
-      };
-      alert(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          "Error desconocido"
-      );
-    }
+  const error = err as AxiosError<{ message?: string; error?: string }>;
+  
+  alert(
+    error.response?.data?.message ||
+    error.response?.data?.error ||
+    error.message ||
+    "Error desconocido"
+  );
+}
   };
 
   /* ===============================
-     Paso 2: Crear VARIANTE
+     Paso 2: Crear VARIANTE sin override
   =============================== */
   const handleCreateVariant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,9 +105,6 @@ export default function ProductWizard() {
         sizeValue: variant.sizeValue,
         color: variant.color,
         sku: variant.sku,
-        priceOverride: variant.priceOverride
-          ? Number(variant.priceOverride)
-          : null,
         stock: variant.stock ? Number(variant.stock) : 0,
       };
 
@@ -119,17 +113,15 @@ export default function ProductWizard() {
       alert("Variante agregada correctamente. Ahora sube una imagen.");
       setStep(3);
     } catch (err: unknown) {
-      const error = err as {
-        response?: { data?: { message?: string; error?: string } };
-        message?: string;
-      };
-      alert(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          "Error desconocido"
-      );
-    }
+  const error = err as AxiosError<{ message?: string; error?: string }>;
+  
+  alert(
+    error.response?.data?.message ||
+    error.response?.data?.error ||
+    error.message ||
+    "Error desconocido"
+  );
+}
   };
 
   /* ===============================
@@ -154,17 +146,15 @@ export default function ProductWizard() {
       alert("Imagen subida correctamente. Producto completado.");
       navigate("/admin");
     } catch (err: unknown) {
-      const error = err as {
-        response?: { data?: { message?: string; error?: string } };
-        message?: string;
-      };
-      alert(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          "Error desconocido"
-      );
-    }
+  const error = err as AxiosError<{ message?: string; error?: string }>;
+  
+  alert(
+    error.response?.data?.message ||
+    error.response?.data?.error ||
+    error.message ||
+    "Error desconocido"
+  );
+}
   };
 
   /* ===============================
@@ -196,9 +186,7 @@ export default function ProductWizard() {
         ))}
       </div>
 
-      {/* =====================================
-          PASO 1 — PRODUCTO
-      ===================================== */}
+      {/* PASO 1 — PRODUCTO */}
       {step === 1 && (
         <form
           onSubmit={handleCreateProduct}
@@ -218,7 +206,9 @@ export default function ProductWizard() {
           <input
             placeholder="Descripción"
             value={form.descripcion}
-            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, descripcion: e.target.value })
+            }
             className="bg-[#2A2A2A] p-2 rounded text-white"
           />
 
@@ -277,7 +267,9 @@ export default function ProductWizard() {
             placeholder="Precio base"
             type="number"
             value={form.precioBase}
-            onChange={(e) => setForm({ ...form, precioBase: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, precioBase: e.target.value })
+            }
             className="bg-[#2A2A2A] p-2 rounded text-white"
           />
 
@@ -290,9 +282,7 @@ export default function ProductWizard() {
         </form>
       )}
 
-      {/* =====================================
-          PASO 2 — VARIANTE
-      ===================================== */}
+      {/* PASO 2 — VARIANTE */}
       {step === 2 && (
         <form
           onSubmit={handleCreateVariant}
@@ -369,20 +359,6 @@ export default function ProductWizard() {
             />
           </label>
 
-          {/* Price override */}
-          <label className="text-sm text-white font-medium">
-            Precio personalizado (opcional)
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Ej: 15990"
-              onChange={(e) =>
-                setVariant({ ...variant, priceOverride: e.target.value })
-              }
-              className="mt-1 bg-[#2A2A2A] p-2 rounded text-white w-full"
-            />
-          </label>
-
           {/* Stock */}
           <label className="text-sm text-white font-medium">
             Stock inicial
@@ -425,9 +401,7 @@ export default function ProductWizard() {
         </form>
       )}
 
-      {/* =====================================
-          PASO 3 — IMAGEN
-      ===================================== */}
+      {/* PASO 3 — IMAGEN */}
       {step === 3 && (
         <form
           onSubmit={handleUploadImage}

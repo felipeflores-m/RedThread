@@ -36,7 +36,7 @@ class VariantControllerTest {
         Variant v = Variant.builder().id(5L).sku("SKU-1").color("NEGRO").sizeValue("M").build();
         when(service.create(any(CreateVariantReq.class))).thenReturn(v);
 
-        CreateVariantReq req = new CreateVariantReq(10L, SizeType.LETTER, "M", "NEGRO", null, null, 2);
+        CreateVariantReq req = new CreateVariantReq(10L, SizeType.LETTER, "M", "NEGRO", null, 2);
 
         mvc.perform(post("/variants")
                         .contentType(MediaType.APPLICATION_JSON)

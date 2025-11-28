@@ -13,7 +13,7 @@ export default function Catalog() {
     setLoading(true);
     CatalogApi.listProducts()
       .then((r) => {
-        const data = Array.isArray(r.data) ? r.data : r.data.results;
+        const data = Array.isArray(r.data) ? r.data : [];
         console.log("Productos cargados:", data);
         setItems(data || []);
         setFiltered(data || []);

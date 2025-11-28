@@ -27,6 +27,9 @@ export type Product = {
   category?: Category;
   brand?: Brand;
   images?: { id: number; publicUrl: string; primary?: boolean }[];
+
+  featured: boolean;   // <-- AGREGA ESTO
+  gender: "HOMBRE" | "MUJER"; // <-- AGREGA ESTO
 };
 
 /* ====== Crear producto ====== */
@@ -42,15 +45,13 @@ export type CreateProductReq = {
 
 
 
-/* ====== Crear variante ====== */
 export type CreateVariantReq = {
   productId: number;
-  sizeType: "EU" | "LETTER";      // Debe coincidir con enum SizeType del backend
+  sizeType: "EU" | "LETTER";
   sizeValue: string;
   color: string;
   sku: string;
-  priceOverride: number | null;   // Backend acepta BigDecimal o null
-  stock: number;                  // Backend requiere stock inicial
+  stock: number;
 };
 
 /* ====== Imagen ====== */
@@ -72,15 +73,8 @@ export const CatalogApi = {
   listBrands: () => http.catalog.get<Brand[]>("/brands"),
 
   /* ---- PRODUCTOS ---- */
-  listProducts: (params?: {
-    q?: string;
-    categoryId?: number;
-    page?: number;
-    pageSize?: number;
-  }) =>
-    http.catalog.get<{ results: Product[]; count: number }>("/products", {
-      params,
-    }),
+  listProducts: () => http.catalog.get<Product[]>("/products"),
+
 
   getProduct: (id: number) => http.catalog.get<Product>(`/products/${id}`),
 

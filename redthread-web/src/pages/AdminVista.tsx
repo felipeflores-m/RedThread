@@ -27,6 +27,8 @@ export default function AdminVista() {
     categoryId: 0,
     brandId: 0,
     precioBase: "",
+    featured: false,     // NUEVO
+    gender: "HOMBRE",    // NUEVO
   });
 
   // === Cargar productos ===
@@ -34,15 +36,14 @@ export default function AdminVista() {
     if (active === "products") {
       setLoading(true);
       CatalogApi.listProducts()
-        .then((res) => {
-          const data = res.data?.results || res.data || [];
-          setProducts(Array.isArray(data) ? data : []);
-        })
-        .catch((err) => {
-          console.error("Error al listar productos:", err);
-          alert("Error al listar productos");
-        })
-        .finally(() => setLoading(false));
+  .then((res) => {
+    setProducts(res.data || []);
+  })
+  .catch((err) => {
+    console.error("Error al listar productos:", err);
+    alert("Error al listar productos");
+  })
+  .finally(() => setLoading(false));
     }
   }, [active]);
 
@@ -67,22 +68,17 @@ export default function AdminVista() {
         name: form.nombre,
         description: form.descripcion,
         basePrice: Number(form.precioBase),
-        
+        featured: form.featured,  // OBLIGATORIO PARA EL BACKEND
+        gender: form.gender,      // OBLIGATORIO PARA EL BACKEND
       };
 
       if (editing) {
-  await CatalogApi.updateProduct(editing.id, payload);
-  alert("Producto actualizado correctamente");
-} else {
-  if (!form.categoryId || !form.brandId) {
-    alert("Selecciona una categoría y una marca válidas antes de crear el producto.");
-    return; // <- este return debe estar dentro del if
-  }
-
-  await CatalogApi.createProduct(payload);
-  alert("Producto creado correctamente");
-}
-
+        await CatalogApi.updateProduct(editing.id, payload);
+        alert("Producto actualizado correctamente");
+      } else {
+        await CatalogApi.createProduct(payload);
+        alert("Producto creado correctamente");
+      }
 
       setShowForm(false);
       setEditing(null);
@@ -92,10 +88,12 @@ export default function AdminVista() {
         categoryId: 0,
         brandId: 0,
         precioBase: "",
+        featured: false,
+        gender: "HOMBRE",
       });
 
       const res = await CatalogApi.listProducts();
-      setProducts(res.data.results || res.data || []);
+      setProducts(res.data || []);
     } catch (err: unknown) {
       console.error("Error en creación/edición:", err);
       const axiosErr = err as {
@@ -113,16 +111,19 @@ export default function AdminVista() {
 
   // === Abrir modal en modo edición ===
   const handleEdit = (p: Product) => {
-    setEditing(p);
-    setForm({
-      nombre: p.name,
-      descripcion: p.description ?? "",
-      categoryId: p.category?.id ?? 0,
-      brandId: p.brand?.id ?? 0,
-      precioBase: p.basePrice.toString(),
-    });
-    setShowForm(true);
-  };
+  setEditing(p);
+  setForm({
+    nombre: p.name,
+    descripcion: p.description ?? "",
+    categoryId: p.category?.id ?? 0,
+    brandId: p.brand?.id ?? 0,
+    precioBase: p.basePrice.toString(),
+    featured: p.featured ?? false,
+    gender: p.gender ?? "HOMBRE",
+  });
+  setShowForm(true);
+};
+
 
   // === Menú lateral ===
   const menu = [
@@ -314,6 +315,31 @@ export default function AdminVista() {
                   }
                   className="mt-1 bg-[#1A1A1A] border border-[#444] p-2 rounded text-white w-full"
                 />
+              </label>
+
+              {/* GENDER */}
+              <label className="text-sm text-white font-medium">
+                Género
+                <select
+                  value={form.gender}
+                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                  className="mt-1 bg-[#1A1A1A] border border-[#444] p-2 rounded text-white w-full"
+                >
+                  <option value="HOMBRE">Hombre</option>
+                  <option value="MUJER">Mujer</option>
+                </select>
+              </label>
+
+              {/* FEATURED */}
+              <label className="flex items-center gap-2 text-sm text-white font-medium">
+                <input
+                  type="checkbox"
+                  checked={form.featured}
+                  onChange={(e) =>
+                    setForm({ ...form, featured: e.target.checked })
+                  }
+                />
+                Destacado
               </label>
 
               <div className="flex justify-end gap-3 mt-4">

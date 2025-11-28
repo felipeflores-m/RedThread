@@ -62,7 +62,6 @@ public class VariantService {
                 .sizeValue(req.sizeValue().toUpperCase())
                 .color(req.color().toUpperCase())
                 .sku(finalSku)
-                .priceOverride(req.priceOverride())
                 .active(true)
                 .createdAt(Instant.now())
                 .build();
@@ -127,7 +126,6 @@ public class VariantService {
         existing.setSizeValue(req.sizeValue().toUpperCase());
         existing.setColor(req.color().toUpperCase());
         existing.setSku(req.sku());
-        existing.setPriceOverride(req.priceOverride());
 
         return variantRepo.save(existing);
     }
