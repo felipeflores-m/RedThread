@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { CatalogApi } from "@/api/catalog.api";
 import type { Product, Category, Brand } from "@/api/catalog.api";
+import { UsersApi } from "@/api/user.api";
+import type { UserDto } from "@/api/user.api";
 
 export default function AdminVista() {
   const navigate = useNavigate();
@@ -20,6 +22,9 @@ export default function AdminVista() {
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [users, setUsers] = useState<UserDto[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
 
   const [form, setForm] = useState({
     nombre: "",
@@ -46,6 +51,17 @@ export default function AdminVista() {
   .finally(() => setLoading(false));
     }
   }, [active]);
+  
+  useEffect(() => {
+  if (active === "users") {
+    setLoadingUsers(true);
+    UsersApi.listUsers()
+      .then((res) => setUsers(res.data || []))
+      .catch(() => alert("Error al cargar usuarios"))
+      .finally(() => setLoadingUsers(false));
+  }
+}, [active]);
+
 
   // === Cargar categorías y marcas ===
   useEffect(() => {
@@ -174,6 +190,48 @@ export default function AdminVista() {
             </p>
           </div>
         )}
+        {/* Usuarios */}
+{active === "users" && (
+  <div>
+    <h2 className="text-3xl font-semibold mb-6">Gestión de Usuarios</h2>
+
+    {loadingUsers ? (
+      <p className="text-[#9E9E9E]">Cargando usuarios...</p>
+    ) : users.length === 0 ? (
+      <p className="text-[#9E9E9E] text-center py-6">
+        No hay usuarios registrados.
+      </p>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="w-full bg-[#1A1A1A] rounded-lg">
+          <thead>
+            <tr className="bg-[#121212]">
+              <th className="p-3 text-left">Nombre</th>
+              <th className="p-3 text-left">Email</th>
+              <th className="p-3 text-left">Roles</th>
+              <th className="p-3 text-left">Fecha creación</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {users.map((u) => (
+              <tr key={u.id} className="border-b border-[#333]">
+                <td className="p-3">{u.fullName}</td>
+                <td className="p-3">{u.email}</td>
+                <td className="p-3">{u.roles.join(", ")}</td>
+                <td className="p-3">
+                  {new Date(u.createdAt).toLocaleDateString("es-CL")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+)}
+
+
 
         {active === "products" && (
           <div>
