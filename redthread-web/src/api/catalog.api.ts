@@ -1,6 +1,9 @@
 import { http } from "./http";
 
-/* ====== Tipos ====== */
+/* ========================
+   Tipos
+======================== */
+
 export type Brand = {
   id: number;
   name: string;
@@ -23,42 +26,52 @@ export type Product = {
   createdAt?: string;
   category?: Category;
   brand?: Brand;
-  images?: { id: number; publicUrl: string }[];
+  images?: { id: number; publicUrl: string; primary?: boolean }[];
 };
 
+/* ====== Crear producto ====== */
 export type CreateProductReq = {
   categoryId: number;
   brandId: number;
   name: string;
   description?: string;
   basePrice: number;
+  featured: boolean;
+  gender: string;
 };
 
-/* ====== Variantes e imágenes ====== */
+
+
+/* ====== Crear variante ====== */
 export type CreateVariantReq = {
   productId: number;
-  sizeType: string;
+  sizeType: "EU" | "LETTER";      // Debe coincidir con enum SizeType del backend
   sizeValue: string;
   color: string;
   sku: string;
-  priceOverride?: number;
+  priceOverride: number | null;   // Backend acepta BigDecimal o null
+  stock: number;                  // Backend requiere stock inicial
 };
 
+/* ====== Imagen ====== */
 export type ProductImage = {
   id: number;
   publicUrl: string;
   primary?: boolean;
 };
 
-/* ====== API ====== */
+/* ========================
+   API
+======================== */
+
 export const CatalogApi = {
-  // ---- CATEGORÍAS ----
+  /* ---- CATEGORÍAS ---- */
   listCategories: () => http.catalog.get<Category[]>("/categories"),
 
-  // ---- MARCAS ----
+  /* ---- MARCAS ---- */
   listBrands: () => http.catalog.get<Brand[]>("/brands"),
 
-  // ---- PRODUCTOS ----
+  /* ---- PRODUCTOS ---- */
   listProducts: (params?: {
     q?: string;
     categoryId?: number;
@@ -79,24 +92,22 @@ export const CatalogApi = {
 
   deleteProduct: (id: number) => http.catalog.delete(`/products/${id}`),
 
-  // ---- VARIANTES ----
+  /* ---- VARIANTES ---- */
   listVariantsByProduct: (productId: number) =>
     http.catalog.get(`/variants?productId=${productId}`),
 
   createVariant: (data: CreateVariantReq) =>
     http.catalog.post("/variants", data),
 
-  // ---- IMÁGENES ----
+  /* ---- IMÁGENES ---- */
   listImages: (productId: number) =>
     http.catalog.get<ProductImage[]>(`/products/${productId}/images`),
 
-  /* Subir imagen local (archivo) */
   uploadImage: (productId: number, formData: FormData) =>
     http.catalog.post(`/products/${productId}/images/upload`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 
-  /* NUEVO: subir imagen desde URL */
   uploadImageFromUrl: (productId: number, data: { url: string }) =>
     http.catalog.post(`/products/${productId}/images/from-url`, data),
 
@@ -106,7 +117,7 @@ export const CatalogApi = {
   deleteImage: (productId: number, imageId: number) =>
     http.catalog.delete(`/products/${productId}/images/${imageId}`),
 
-  // ---- CUPONES ----
+  /* ---- CUPONES ---- */
   validateCoupon: (code: string, productIds: number[]) =>
     http.catalog.post<{ valid: boolean; discountPct?: number }>(
       "/coupons/validate",

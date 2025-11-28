@@ -28,7 +28,7 @@ localStorage.setItem("rt.refresh", data.refreshToken ?? "");
   await loadMe();
   const user = useAuth.getState().user;
 
-  if (user?.roles?.includes("ADMIN")) nav("/admin");
+  if (user?.roles?.includes("ADMINISTRADOR")) nav("/admin");
   else nav("/");
 } catch (err) {
   if (axios.isAxiosError(err)) {

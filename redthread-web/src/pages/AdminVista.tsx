@@ -67,6 +67,7 @@ export default function AdminVista() {
         name: form.nombre,
         description: form.descripcion,
         basePrice: Number(form.precioBase),
+        
       };
 
       if (editing) {

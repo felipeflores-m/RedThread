@@ -24,6 +24,8 @@ export default function ProductWizard() {
     categoryId: 0,
     brandId: 0,
     precioBase: "",
+    gender: "",
+    featured: false,
   });
 
   const [variant, setVariant] = useState({
@@ -31,10 +33,12 @@ export default function ProductWizard() {
     sizeValue: "",
     color: "",
     sku: "",
+    priceOverride: "",
+    stock: 0,
   });
 
   const [files, setFiles] = useState<FileList | null>(null);
-  const [imageUrl, setImageUrl] = useState(""); // nuevo campo para URL
+  const [imageUrl, setImageUrl] = useState("");
 
   const letterSizes = ["XXS", "XS", "S", "M", "L", "XL", "XXL"];
   const euSizes = Array.from({ length: 8 }, (_, i) => (39 + i).toString());
@@ -44,32 +48,31 @@ export default function ProductWizard() {
     CatalogApi.listBrands().then((res) => setBrands(res.data));
   }, []);
 
-  // === Paso 1: Crear producto ===
+  /* ===============================
+     Paso 1: Crear PRODUCTO
+  =============================== */
   const handleCreateProduct = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     try {
-      if (!form.nombre.trim()) {
-        alert("El nombre es obligatorio");
-        return;
-      }
-      if (!form.categoryId || !form.brandId) {
-        alert("Debes seleccionar categoría y marca válidas");
-        return;
-      }
-      if (!form.precioBase) {
-        alert("El precio base es obligatorio");
-        return;
-      }
+      if (!form.nombre.trim()) return alert("El nombre es obligatorio");
+      if (!form.categoryId || !form.brandId)
+        return alert("Selecciona una categoría y marca válidas");
+      if (!form.precioBase) return alert("El precio base es obligatorio");
+      if (!form.gender) return alert("Debes seleccionar un género");
 
       const payload = {
         categoryId: form.categoryId,
         brandId: form.brandId,
-        name: form.nombre,
-        description: form.descripcion,
-        basePrice: Number(form.precioBase),
-      };
+      name: form.nombre,
+  description: form.descripcion,
+  basePrice: Number(form.precioBase),
+  featured: form.featured,
+  gender: form.gender
+};
+
 
       const res = await CatalogApi.createProduct(payload);
+
       setProductId(res.data.id);
       alert("Producto creado correctamente. Ahora agrega una variante.");
       setStep(2);
@@ -78,38 +81,41 @@ export default function ProductWizard() {
         response?: { data?: { message?: string; error?: string } };
         message?: string;
       };
-      const msg =
+      alert(
         error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        "Error desconocido";
-      alert(msg);
+          error.response?.data?.error ||
+          error.message ||
+          "Error desconocido"
+      );
     }
   };
 
-  // === Paso 2: Crear variante ===
+  /* ===============================
+     Paso 2: Crear VARIANTE
+  =============================== */
   const handleCreateVariant = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId) {
-      alert("Primero crea un producto.");
-      return;
-    }
+
+    if (!productId) return alert("Primero crea un producto.");
 
     try {
-      if (!variant.sizeType || !variant.sizeValue) {
-        alert("Selecciona tipo y valor de talla válidos");
-        return;
-      }
+      if (!variant.sizeType || !variant.sizeValue)
+        return alert("Selecciona tipo y valor de talla válidos");
 
       const payload = {
         productId,
-        sizeType: variant.sizeType,
+        sizeType: variant.sizeType as "EU" | "LETTER",
         sizeValue: variant.sizeValue,
         color: variant.color,
         sku: variant.sku,
+        priceOverride: variant.priceOverride
+          ? Number(variant.priceOverride)
+          : null,
+        stock: variant.stock ? Number(variant.stock) : 0,
       };
 
       await CatalogApi.createVariant(payload);
+
       alert("Variante agregada correctamente. Ahora sube una imagen.");
       setStep(3);
     } catch (err: unknown) {
@@ -117,35 +123,32 @@ export default function ProductWizard() {
         response?: { data?: { message?: string; error?: string } };
         message?: string;
       };
-      const msg =
+      alert(
         error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        "Error desconocido";
-      alert(msg);
+          error.response?.data?.error ||
+          error.message ||
+          "Error desconocido"
+      );
     }
   };
 
-  // === Paso 3: Subir imagen (desde PC o desde URL) ===
+  /* ===============================
+     Paso 3: Subir IMAGEN
+  =============================== */
   const handleUploadImage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId) {
-      alert("Producto inválido");
-      return;
-    }
+
+    if (!productId) return alert("Producto inválido");
 
     try {
       if (imageUrl.trim()) {
-        // si el usuario pega una URL
         await CatalogApi.uploadImageFromUrl(productId, { url: imageUrl });
       } else if (files?.length) {
-        // si sube archivo local
         const formData = new FormData();
         formData.append("file", files[0]);
         await CatalogApi.uploadImage(productId, formData);
       } else {
-        alert("Selecciona un archivo o pega una URL");
-        return;
+        return alert("Selecciona un archivo o pega una URL");
       }
 
       alert("Imagen subida correctamente. Producto completado.");
@@ -155,14 +158,18 @@ export default function ProductWizard() {
         response?: { data?: { message?: string; error?: string } };
         message?: string;
       };
-      const msg =
+      alert(
         error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        "Error desconocido";
-      alert(msg);
+          error.response?.data?.error ||
+          error.message ||
+          "Error desconocido"
+      );
     }
   };
+
+  /* ===============================
+     UI
+  =============================== */
 
   const steps = [
     { num: 1, label: "Producto" },
@@ -174,7 +181,6 @@ export default function ProductWizard() {
     <div className="flex flex-col items-center p-8 text-white bg-[#121212] min-h-screen">
       <h1 className="text-2xl font-bold mb-6 text-[#D32F2F]">Crear producto</h1>
 
-      {/* Barra de pasos */}
       <div className="flex gap-4 mb-8">
         {steps.map((s) => (
           <div
@@ -190,19 +196,25 @@ export default function ProductWizard() {
         ))}
       </div>
 
-      {/* Paso 1 */}
+      {/* =====================================
+          PASO 1 — PRODUCTO
+      ===================================== */}
       {step === 1 && (
         <form
           onSubmit={handleCreateProduct}
           className="flex flex-col gap-3 bg-[#1A1A1A] p-6 rounded-xl w-[400px]"
         >
-          <h2 className="text-lg font-semibold mb-2">Paso 1: Datos del producto</h2>
+          <h2 className="text-lg font-semibold mb-2">
+            Paso 1: Datos del producto
+          </h2>
+
           <input
             placeholder="Nombre"
             value={form.nombre}
             onChange={(e) => setForm({ ...form, nombre: e.target.value })}
             className="bg-[#2A2A2A] p-2 rounded text-white"
           />
+
           <input
             placeholder="Descripción"
             value={form.descripcion}
@@ -240,6 +252,27 @@ export default function ProductWizard() {
             ))}
           </select>
 
+          <select
+            value={form.gender}
+            onChange={(e) => setForm({ ...form, gender: e.target.value })}
+            className="bg-[#2A2A2A] p-2 rounded text-white"
+          >
+            <option value="">Selecciona género</option>
+            <option value="HOMBRE">Hombre</option>
+            <option value="MUJER">Mujer</option>
+          </select>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.featured}
+              onChange={(e) =>
+                setForm({ ...form, featured: e.target.checked })
+              }
+            />
+            Destacado en página principal
+          </label>
+
           <input
             placeholder="Precio base"
             type="number"
@@ -257,14 +290,19 @@ export default function ProductWizard() {
         </form>
       )}
 
-      {/* Paso 2 */}
+      {/* =====================================
+          PASO 2 — VARIANTE
+      ===================================== */}
       {step === 2 && (
         <form
           onSubmit={handleCreateVariant}
           className="flex flex-col gap-3 bg-[#1A1A1A] p-6 rounded-xl w-[400px]"
         >
-          <h2 className="text-lg font-semibold mb-2">Paso 2: Agregar variante</h2>
+          <h2 className="text-lg font-semibold mb-2">
+            Paso 2: Agregar variante
+          </h2>
 
+          {/* Tipo talla */}
           <label className="text-sm text-white font-medium">
             Tipo de talla
             <select
@@ -285,6 +323,7 @@ export default function ProductWizard() {
             </select>
           </label>
 
+          {/* Valor talla */}
           {variant.sizeType && (
             <label className="text-sm text-white font-medium">
               Valor de talla
@@ -301,19 +340,22 @@ export default function ProductWizard() {
                 className="mt-1 bg-[#2A2A2A] p-2 rounded text-white w-full"
               >
                 <option value="">Selecciona talla</option>
-                {(variant.sizeType === "EU" ? euSizes : letterSizes).map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
+                {(variant.sizeType === "EU" ? euSizes : letterSizes).map(
+                  (s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  )
+                )}
               </select>
             </label>
           )}
 
+          {/* Color */}
           <label className="text-sm text-white font-medium">
             Color
             <input
-              placeholder="Ej: Negro, Azul, Rojo"
+              placeholder="Ej: Negro, Azul"
               value={variant.color}
               onChange={(e) => {
                 const color = e.target.value;
@@ -327,6 +369,35 @@ export default function ProductWizard() {
             />
           </label>
 
+          {/* Price override */}
+          <label className="text-sm text-white font-medium">
+            Precio personalizado (opcional)
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Ej: 15990"
+              onChange={(e) =>
+                setVariant({ ...variant, priceOverride: e.target.value })
+              }
+              className="mt-1 bg-[#2A2A2A] p-2 rounded text-white w-full"
+            />
+          </label>
+
+          {/* Stock */}
+          <label className="text-sm text-white font-medium">
+            Stock inicial
+            <input
+              type="number"
+              min={0}
+              placeholder="Ej: 10"
+              onChange={(e) =>
+                setVariant({ ...variant, stock: Number(e.target.value) })
+              }
+              className="mt-1 bg-[#2A2A2A] p-2 rounded text-white w-full"
+            />
+          </label>
+
+          {/* SKU */}
           <label className="text-sm text-white font-medium">
             SKU (autogenerado)
             <input
@@ -354,7 +425,9 @@ export default function ProductWizard() {
         </form>
       )}
 
-      {/* Paso 3 */}
+      {/* =====================================
+          PASO 3 — IMAGEN
+      ===================================== */}
       {step === 3 && (
         <form
           onSubmit={handleUploadImage}
@@ -362,7 +435,6 @@ export default function ProductWizard() {
         >
           <h2 className="text-lg font-semibold mb-2">Paso 3: Subir imagen</h2>
 
-          {/* Nuevo campo para pegar una URL */}
           <input
             type="url"
             placeholder="Pega la URL de una imagen (opcional)"
