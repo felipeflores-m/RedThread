@@ -1,11 +1,23 @@
+// src/api/http.ts
 import axios from "axios";
 
 console.log("Auth API base:", import.meta.env.VITE_AUTH_API);
 
-const authBase = import.meta.env.VITE_AUTH_API as string;
-const catalogBase = import.meta.env.VITE_CATALOG_API as string;
-const orderBase = import.meta.env.VITE_ORDER_API as string;
-const deliveryBase = import.meta.env.VITE_DELIVERY_API as string;
+const authBase =
+  (import.meta.env.VITE_AUTH_API as string | undefined) ||
+  "http://localhost:8081";
+
+const catalogBase =
+  (import.meta.env.VITE_CATALOG_API as string | undefined) ||
+  "http://localhost:8082";
+
+const orderBase =
+  (import.meta.env.VITE_ORDER_API as string | undefined) ||
+  "http://localhost:8083";
+
+const deliveryBase =
+  (import.meta.env.VITE_DELIVERY_API as string | undefined) ||
+  "http://localhost:8084";
 
 export const http = {
   auth: axios.create({ baseURL: authBase, withCredentials: false }),
