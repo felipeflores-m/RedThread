@@ -20,6 +20,8 @@ import ReturnsPage from "@/pages/ReturnsPage";
 import SupportPage from "@/pages/SupportPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
+import SuccessPage from "@/pages/SuccessPage";
+import CheckoutPage from "@/pages/CheckoutPage";
 
 export default function AppRouter() {
   return (
@@ -56,6 +58,10 @@ export default function AppRouter() {
               element={<ReturnsPage />}
             />
             <Route path="/soporte" element={<SupportPage />} />
+
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/success" element={<SuccessPage />} />
+
 
             {/* Legal */}
             <Route

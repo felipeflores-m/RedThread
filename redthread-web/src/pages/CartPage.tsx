@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "@/store/cart.store";
 
 export default function CartPage() {
   const { lines, setQty, remove, clear } = useCart();
+  const navigate = useNavigate();
 
   const total = lines.reduce((acc, l) => acc + l.precio * l.qty, 0);
 
@@ -102,9 +103,7 @@ export default function CartPage() {
                     <div className="inline-flex items-center rounded-full border border-white/15 bg-neutral-900/60 px-3 py-1.5">
                       <button
                         type="button"
-                        onClick={() =>
-                          handleChangeQty(l.variantId, l.qty - 1)
-                        }
+                        onClick={() => handleChangeQty(l.variantId, l.qty - 1)}
                         className="px-2 text-sm text-white/80 hover:text-white"
                       >
                         −
@@ -114,9 +113,7 @@ export default function CartPage() {
                       </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          handleChangeQty(l.variantId, l.qty + 1)
-                        }
+                        onClick={() => handleChangeQty(l.variantId, l.qty + 1)}
                         className="px-2 text-sm text-white/80 hover:text-white"
                       >
                         +
@@ -157,9 +154,8 @@ export default function CartPage() {
             </div>
 
             <p className="mt-2 text-[11px] text-white/45">
-              Los costos de envío e impuestos se calcularán en el siguiente
-              paso. Esta página es solo un simulador de carrito para la
-              evaluación.
+              Los costos de envío e impuestos se calcularán en el siguiente paso.
+              Esta página es solo un simulador de carrito para la evaluación.
             </p>
 
             <div className="mt-5 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
@@ -172,6 +168,7 @@ export default function CartPage() {
 
               <button
                 type="button"
+                onClick={() => navigate("/checkout")}   // ← AQUÍ EL CAMBIO
                 className="inline-flex items-center justify-center rounded-md bg-[#D32F2F] px-5 py-2 text-sm font-semibold text-white hover:bg-[#b71c1c] transition-colors"
               >
                 Continuar con el pago
@@ -180,7 +177,7 @@ export default function CartPage() {
 
             <p className="mt-4 text-[11px] text-white/45">
               Una vez confirmada la compra, recibirías un correo con el resumen
-              del pedido y el seguimiento del envío (simulado).
+              del pedido y el seguimiento del envío.
             </p>
           </section>
         </>
