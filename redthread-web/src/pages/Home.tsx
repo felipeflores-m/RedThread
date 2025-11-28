@@ -1,93 +1,213 @@
-import ProductCard from "../components/ui/ProductCard";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import ProductCard from "@/components/ui/ProductCard";
+import { CatalogApi, type Product, type Category } from "@/api/catalog.api";
+import { useCart } from "@/store/cart.store";
+import { useToast } from "@/store/toast.store";
+import { buildCatalogImageUrl } from "@/api/http";
+
+type CategoryFilter = "ALL" | number;
 
 export default function Home() {
-    // Datos dummy por ahora (luego vendrán de CatalogApi)
-    const featured = [
-        { id: 1, name: "Zapatilla Runner Pro 41", price: 49990 },
-        { id: 2, name: "Polerón Urban Fit", price: 34990 },
-        { id: 3, name: "Polera Essentials", price: 12990 },
-        { id: 4, name: "Chaqueta Softshell", price: 69990 },
-        { id: 5, name: "Jogger Street", price: 27990 },
-        { id: 6, name: "Zapatilla Street 42", price: 54990 },
-        { id: 7, name: "Cinturón cuero", price: 15990 },
-        { id: 8, name: "Gorra Classic", price: 9990 },
-    ];
+  const navigate = useNavigate();
+  const { add } = useCart();
+  const { show } = useToast();
 
-    return (
-        <div>
-            {/* HERO (full-bleed + degradado hasta el borde superior) */}
-            <section
-                className="
-    relative overflow-hidden
-    mx-[calc(50%-50vw)]
-  "
-            >
-                {/* Fondo rojo extendido y con z-index negativo */}
-                <div
-                    className="
-      pointer-events-none absolute inset-x-0 -top-[180px]
-      h-[750px] md:h-[850px]
-      bg-[radial-gradient(1800px_900px_at_0%_-10%,rgba(211,47,47,0.38),transparent_75%)]
-      blur-[48px]
-      -z-10
-    "
-                />
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-                {/* Contenido */}
-                <div className="relative mx-auto max-w-7xl px-4 py-12 md:py-16 lg:py-20">
-                    <div className="grid gap-8 md:grid-cols-2 md:items-center">
-                        <div>
-                            <p className="text-xs uppercase tracking-widest text-white/60">Colección 2025</p>
-                            <h1 className="mt-2 text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight">
-                                Estilo <span className="text-[#D32F2F]">urbano</span> para todos los días
-                            </h1>
-                            <p className="mt-3 text-white/70 max-w-xl">
-                                Ropa y calzado con personalidad. Calidad real, tallas correctas (39–45) y envíos rápidos.
-                            </p>
-                            <div className="mt-6 flex flex-wrap gap-3">
-                                <a href="/catalog" className="btn btn-primary">Ver catálogo</a>
-                            </div>
-                        </div>
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] =
+    useState<CategoryFilter>("ALL");
 
-                        <div className="order-first md:order-none">
-                            <div
-                                className="
-            aspect-[5/4] rounded-xl border border-neutral-800 
-            bg-[url('https://media.discordapp.net/attachments/828708800504135750/1436059419778482317/urban-style-defined-guide-edgy-fashion-movement_1200x674.png?ex=690e3a0e&is=690ce88e&hm=7dda484849c8fb244eba8a4a7cfdaf552d22aaba920d6d2041bc24c8d86216a0&=&format=webp&quality=lossless&width=1658&height=932')]
-            bg-cover bg-center shadow-[0_0_0_1px_rgba(255,255,255,0.03)]
-          "
-                            />
-                        </div>
-                    </div>
-                </div>
-            </section>
+  // Cargar productos desde el catálogo
+  useEffect(() => {
+    setLoadingProducts(true);
+    CatalogApi.listProducts()
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : [];
+        setProducts(list);
+      })
+      .catch((err) => {
+        console.error("Error cargando productos para Home:", err);
+        setProducts([]);
+      })
+      .finally(() => setLoadingProducts(false));
+  }, []);
 
-            {/* CATEGORÍAS */}
-            <section className="mx-auto max-w-7xl px-4 py-10">
-                <h2 className="text-xl font-semibold mb-4">Compra por categoría</h2>
-                <div className="flex flex-wrap gap-3">
-                    {["Zapatillas", "Poleras", "Polerones", "Chaquetas", "Pantalones", "Accesorios"].map(c => (
-                        <button key={c} className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-white/85 hover:bg-neutral-900">
-                            {c}
-                        </button>
-                    ))}
-                </div>
-            </section>
+  // Cargar categorías
+  useEffect(() => {
+    CatalogApi.listCategories()
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : [];
+        setCategories(list);
+      })
+      .catch((err) => {
+        console.error("Error cargando categorías para Home:", err);
+        setCategories([]);
+      });
+  }, []);
 
-            {/* DESTACADOS */}
-            <section className="mx-auto max-w-7xl px-4 pb-14">
-                <div className="flex items-baseline justify-between">
-                    <h2 className="text-xl font-semibold">Novedades</h2>
-                    <Link to="/catalog" className="text-sm text-white/70 hover:text-white">Ver todo</Link>
-                </div>
+  const filteredProducts =
+    selectedCategory === "ALL"
+      ? products
+      : products.filter((p) => p.category?.id === selectedCategory);
 
-                <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-                    {featured.map(p => (
-                        <ProductCard key={p.id} name={p.name} priceCLP={p.price} />
-                    ))}
-                </div>
-            </section>
+  // Para la sección de destacados solo mostramos los primeros 8
+  const featured = filteredProducts.slice(0, 8);
+
+  const handleAddToCart = (p: Product) => {
+    const firstImage =
+      p.images && p.images.length > 0 ? p.images[0].publicUrl : undefined;
+
+    add({
+      variantId: p.id,
+      nombre: p.name,
+      precio: Number(p.basePrice ?? 0),
+      qty: 1,
+      image: buildCatalogImageUrl(firstImage),
+    });
+
+    show("Producto agregado al carrito", "success");
+  };
+
+  const handleOpenDetail = (p: Product) => {
+    navigate(`/product/${p.id}`);
+  };
+
+  return (
+    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-b from-black via-neutral-950 to-black text-white">
+      {/* HERO */}
+      <section className="relative overflow-hidden">
+        {/* Glow de fondo */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-24 left-[-10%] h-72 w-72 rounded-full bg-[#D32F2F] blur-[140px] opacity-30" />
+          <div className="absolute bottom-[-10%] right-[-10%] h-72 w-72 rounded-full bg-blue-500 blur-[140px] opacity-25" />
         </div>
-    );
+
+        <div className="relative mx-auto max-w-7xl px-4 py-12 md:py-16 lg:py-20">
+          <div className="grid gap-8 md:grid-cols-2 md:items-center">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-white/60">
+                Colección 2025
+              </p>
+              <h1 className="mt-2 text-3xl md:text-4xl lg:text-5xl font-semibold leading-tight">
+                Estilo <span className="text-[#D32F2F]">urbano</span> para todos
+                los días
+              </h1>
+              <p className="mt-3 text-white/70 max-w-xl">
+                Ropa y calzado con personalidad. Calidad real, tallas correctas
+                y envíos rápidos.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link to="/catalog" className="btn btn-primary">
+                  Ver catálogo
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn-ghost border border-white/10"
+                  onClick={() => {
+                    const firstCategory = categories[0];
+                    if (firstCategory) {
+                      setSelectedCategory(firstCategory.id);
+                    }
+                  }}
+                >
+                  Ver categorías
+                </button>
+              </div>
+            </div>
+
+            {/* Imagen del HERO usando REDTHREAD-HOME.png */}
+            <div className="order-first md:order-none">
+              <div className="aspect-[5/4] rounded-xl border border-neutral-800 bg-black overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
+                <img
+                  src="/REDTHREAD-HOME.png"
+                  alt="RedThread Home"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CATEGORÍAS */}
+      <section className="border-y border-white/5 bg-black/40">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6">
+          <h2 className="text-sm font-semibold tracking-wide text-white/80">
+            Compra por categoría
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("ALL")}
+              className={`rounded-full border px-4 py-2 text-xs md:text-sm ${
+                selectedCategory === "ALL"
+                  ? "border-[#D32F2F] bg-[#D32F2F] text-white"
+                  : "border-white/10 bg-transparent text-white/80 hover:bg-white/5"
+              }`}
+            >
+              Todas
+            </button>
+
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedCategory(c.id)}
+                className={`rounded-full border px-4 py-2 text-xs md:text-sm ${
+                  selectedCategory === c.id
+                    ? "border-[#D32F2F] bg-[#D32F2F] text-white"
+                    : "border-white/10 bg-transparent text-white/80 hover:bg-white/5"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* DESTACADOS / LISTA DE PRODUCTOS */}
+      <section className="mx-auto max-w-7xl px-4 pb-14 pt-10">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="text-xl font-semibold">Novedades</h2>
+          <Link
+            to="/catalog"
+            className="text-sm text-white/70 hover:text-white"
+          >
+            Ver todo
+          </Link>
+        </div>
+
+        {loadingProducts ? (
+          <p className="mt-6 text-sm text-white/70">Cargando productos...</p>
+        ) : featured.length === 0 ? (
+          <p className="mt-6 text-sm text-white/70">
+            Todavía no hay productos creados en el catálogo.
+          </p>
+        ) : (
+          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {featured.map((p) => (
+              <ProductCard
+                key={p.id}
+                name={p.name}
+                priceCLP={Number(p.basePrice ?? 0)}
+                image={
+                  p.images && p.images.length > 0
+                    ? p.images[0].publicUrl
+                    : undefined
+                }
+                onAdd={() => handleAddToCart(p)}
+                onClick={() => handleOpenDetail(p)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }

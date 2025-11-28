@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import ToastContainer from "@/components/ui/ToastContainer";
 
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
@@ -25,6 +26,8 @@ export default function AppRouter() {
     <BrowserRouter>
       <div className="min-h-screen flex flex-col text-white">
         <Navbar />
+        {/* Toasts globales */}
+        <ToastContainer />
 
         <main className="flex-1">
           <Routes>
@@ -40,10 +43,7 @@ export default function AppRouter() {
 
             {/* Empresa */}
             <Route path="/sobre-nosotros" element={<AboutPage />} />
-            <Route
-              path="/trabaja-con-nosotros"
-              element={<CareersPage />}
-            />
+            <Route path="/trabaja-con-nosotros" element={<CareersPage />} />
             <Route path="/prensa" element={<PressPage />} />
 
             {/* Ayuda */}

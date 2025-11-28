@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CatalogApi } from "@/api/catalog.api";
 import type { Product } from "@/api/catalog.api";
 import { Link } from "react-router-dom";
+import { buildCatalogImageUrl } from "@/api/http";
 
 export default function Catalog() {
   const [q, setQ] = useState("");
@@ -64,7 +65,7 @@ export default function Catalog() {
               <div className="aspect-square bg-neutral-800 rounded mb-3 overflow-hidden flex items-center justify-center">
                 {p.images && p.images.length > 0 ? (
                   <img
-                    src={p.images[0].publicUrl}
+                    src={buildCatalogImageUrl(p.images[0].publicUrl)}
                     className="w-full h-full object-cover"
                     alt={p.name}
                   />

@@ -1,6 +1,16 @@
 import { Link } from "react-router-dom";
+import { useCart } from "@/store/cart.store";
 
 export default function CartPage() {
+  const { lines, setQty, remove, clear } = useCart();
+
+  const total = lines.reduce((acc, l) => acc + l.precio * l.qty, 0);
+
+  const handleChangeQty = (variantId: number, qty: number) => {
+    if (qty < 1) return;
+    setQty(variantId, qty);
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:py-14">
       {/* Header */}
@@ -14,67 +24,167 @@ export default function CartPage() {
           </h1>
           <p className="mt-2 text-sm text-white/65 max-w-xl">
             Revisa los productos que agregarás a tu pedido antes de continuar
-            con el pago.
+            con el pago. Puedes ajustar cantidades o eliminar ítems cuando
+            quieras.
           </p>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-3 text-xs text-white/60">
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#D32F2F] text-[11px] font-semibold">
-            i
-          </span>
-          <span>
-            Tu carrito se guarda asociado a tu cuenta para que puedas retomarlo
-            desde cualquier dispositivo.
-          </span>
+        <div className="flex items-center gap-3 text-sm">
+          <button
+            type="button"
+            onClick={clear}
+            disabled={lines.length === 0}
+            className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium text-white/75 hover:bg-white/5 disabled:opacity-40 disabled:hover:bg-transparent"
+          >
+            Vaciar carrito
+          </button>
         </div>
       </header>
 
-      {/* Estado vacío */}
-      <section className="rounded-2xl border border-neutral-800/80 bg-gradient-to-br from-neutral-900/80 via-neutral-950 to-black px-6 py-10 md:px-10 md:py-14 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-700/70 bg-neutral-900/80 shadow-[0_0_0_1px_rgba(255,255,255,0.03)]">
-          <svg
-            className="h-7 w-7 text-white/75"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
-            <circle cx="9" cy="21" r="1" stroke="currentColor" />
-            <circle cx="20" cy="21" r="1" stroke="currentColor" />
-            <path
-              d="M1 4h3l2.4 11.5a1 1 0 0 0 1 .8h12.7a1 1 0 0 0 1-.8L22 8H6"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-
-        <h2 className="mt-6 text-xl font-semibold">Tu carrito está vacío</h2>
-        <p className="mt-2 text-sm text-white/65 max-w-md mx-auto">
-          Explora nuestro catálogo y agrega tus prendas favoritas. Aquí verás el
-          detalle de productos, tallas, cantidades y montos a pagar.
-        </p>
-
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link
-            to="/catalog"
-            className="inline-flex items-center rounded-md bg-[#D32F2F] px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 transition-colors"
-          >
-            Explorar catálogo
-          </Link>
+      {lines.length === 0 ? (
+        <section className="rounded-xl border border-white/10 bg-neutral-950/60 px-5 py-10 text-center">
+          <p className="text-sm text-white/70">
+            Todavía no tienes productos en tu carrito.
+          </p>
           <Link
             to="/"
-            className="inline-flex items-center rounded-md border border-neutral-700 px-4 py-2.5 text-sm font-medium text-white/85 hover:bg-neutral-900 transition-colors"
+            className="mt-5 inline-flex items-center rounded-md border border-white/15 px-4 py-2 text-xs font-medium text-white/85 hover:bg-neutral-900 transition-colors"
           >
             Volver al inicio
           </Link>
-        </div>
+        </section>
+      ) : (
+        <>
+          {/* Lista de productos */}
+          <section className="rounded-xl border border-white/10 bg-neutral-950/60 px-4 py-5 md:px-6 md:py-6">
+            <ul className="space-y-4">
+              {lines.map((l) => (
+                <li
+                  key={l.variantId}
+                  className="flex flex-col gap-3 border-b border-white/5 pb-4 last:border-none last:pb-0 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="flex gap-3">
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-neutral-900">
+                      {l.image ? (
+                        <img
+                          src={l.image}
+                          alt={l.nombre}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full w-full place-content-center text-[10px] text-white/40">
+                          Sin imagen
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {l.nombre}
+                      </p>
+                      {(l.talla || l.color) && (
+                        <p className="mt-1 text-xs text-white/55">
+                          {l.talla && <span>Talla: {l.talla}</span>}
+                          {l.talla && l.color && <span> · </span>}
+                          {l.color && <span>Color: {l.color}</span>}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-white/55">
+                        Precio unitario:{" "}
+                        {l.precio.toLocaleString("es-CL", {
+                          style: "currency",
+                          currency: "CLP",
+                        })}
+                      </p>
+                    </div>
+                  </div>
 
-        <p className="mt-6 text-[11px] text-white/45">
-          Una vez confirmada la compra, recibirás un correo con el resumen del
-          pedido y el seguimiento del envío.
-        </p>
-      </section>
+                  <div className="flex items-center gap-4">
+                    <div className="inline-flex items-center rounded-full border border-white/15 bg-neutral-900/60 px-3 py-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleChangeQty(l.variantId, l.qty - 1)
+                        }
+                        className="px-2 text-sm text-white/80 hover:text-white"
+                      >
+                        −
+                      </button>
+                      <span className="mx-2 min-w-[2rem] text-center text-sm font-semibold">
+                        {l.qty}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleChangeQty(l.variantId, l.qty + 1)
+                        }
+                        className="px-2 text-sm text-white/80 hover:text-white"
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="text-sm font-semibold">
+                        {(l.precio * l.qty).toLocaleString("es-CL", {
+                          style: "currency",
+                          currency: "CLP",
+                        })}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => remove(l.variantId)}
+                        className="mt-1 text-[11px] text-white/45 hover:text-white/80"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Resumen */}
+          <section className="mt-6 rounded-xl border border-white/10 bg-neutral-950/60 px-5 py-6">
+            <div className="flex items-center justify-between text-sm">
+              <p className="text-white/70">Total productos</p>
+              <p className="text-lg font-semibold">
+                {total.toLocaleString("es-CL", {
+                  style: "currency",
+                  currency: "CLP",
+                })}
+              </p>
+            </div>
+
+            <p className="mt-2 text-[11px] text-white/45">
+              Los costos de envío e impuestos se calcularán en el siguiente
+              paso. Esta página es solo un simulador de carrito para la
+              evaluación.
+            </p>
+
+            <div className="mt-5 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
+              <Link
+                to="/catalog"
+                className="inline-flex items-center rounded-md border border-white/15 px-4 py-2 text-xs font-medium text-white/85 hover:bg-neutral-900 transition-colors"
+              >
+                Seguir comprando
+              </Link>
+
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-md bg-[#D32F2F] px-5 py-2 text-sm font-semibold text-white hover:bg-[#b71c1c] transition-colors"
+              >
+                Continuar con el pago
+              </button>
+            </div>
+
+            <p className="mt-4 text-[11px] text-white/45">
+              Una vez confirmada la compra, recibirías un correo con el resumen
+              del pedido y el seguimiento del envío (simulado).
+            </p>
+          </section>
+        </>
+      )}
     </div>
   );
 }
