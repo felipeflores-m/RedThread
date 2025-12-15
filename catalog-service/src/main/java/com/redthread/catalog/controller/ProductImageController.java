@@ -1,6 +1,16 @@
 package com.redthread.catalog.controller;
 
+import com.redthread.catalog.controller.dto.ImageDto;
+import com.redthread.catalog.controller.dto.ImageMapper;
+import com.redthread.catalog.model.ProductImage;
+import com.redthread.catalog.repository.ProductImageRepository;
 import com.redthread.catalog.service.ImageStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +25,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,73 +33,118 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductImageController {
 
-    private final ImageStorageService imageStorageService;
+        private final ImageStorageService imageStorageService;
+        private final ProductImageRepository imageRepo;
 
-    // =========================
-    // Subir archivo local
-    // =========================
-    @PostMapping("/upload")
-    public ResponseEntity<Void> upload(
-            @PathVariable Long productId,
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(name = "primary", defaultValue = "true") boolean primary
-    ) throws IOException {
-
-        // Guarda la imagen y crea ProductImage + relación con Product
-        imageStorageService.store(productId, file, primary);
-
-        // No devolvemos el ProductImage para evitar problemas de lazy loading
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    // DTO para la URL remota
-    public record ImageUrlRequest(@NotBlank String url) {}
-
-    // =========================
-    // Subir imagen desde URL remota
-    // =========================
-    @PostMapping("/from-url")
-    public ResponseEntity<Void> fromUrl(
-            @PathVariable Long productId,
-            @RequestBody @Valid ImageUrlRequest request,
-            @RequestParam(name = "primary", defaultValue = "true") boolean primary
-    ) throws IOException {
-
-        URI uri = URI.create(request.url());
-        String ext = getExt(request.url());
-        String fileName = UUID.randomUUID() + "." + ext;
-
-        // Carpeta temporal para descargar la imagen
-        Path tempDir = Files.createTempDirectory("rt-img-" + Instant.now().toEpochMilli());
-        Path tempFile = tempDir.resolve(fileName);
-
-        try (InputStream in = uri.toURL().openStream()) {
-            Files.copy(in, tempFile);
+        // ============================================================
+        // LISTAR IMÁGENES DE UN PRODUCTO (GET)
+        // ============================================================
+        @GetMapping
+        @Operation(summary = "Listar imágenes de un producto", description = "Devuelve todas las imágenes asociadas al producto, ordenadas por sortOrder.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Listado de imágenes", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ImageDto.class))),
+                        @ApiResponse(responseCode = "404", description = "Producto no existe"),
+                        @ApiResponse(responseCode = "500", description = "Error interno")
+        })
+        public List<ImageDto> list(
+                        @Parameter(description = "ID del producto", example = "5") @PathVariable Long productId) {
+                List<ProductImage> images = imageRepo.findByProductIdOrderBySortOrderAsc(productId);
+                return images.stream()
+                                .map(ImageMapper::toDto)
+                                .toList();
         }
 
-        try {
-            // Reutilizamos tu lógica central en el servicio
-            imageStorageService.storeFromPath(productId, tempFile, primary);
-        } finally {
-            // Limpiamos archivos temporales
-            Files.deleteIfExists(tempFile);
-            Files.deleteIfExists(tempDir);
+        // ============================================================
+        // SUBIR ARCHIVO LOCAL
+        // ============================================================
+        @PostMapping("/upload")
+        @Operation(summary = "Subir imagen local", description = "Sube un archivo multipart, lo guarda en disco y crea el ProductImage asociado.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "201", description = "Imagen creada correctamente", content = @Content(schema = @Schema(implementation = ImageDto.class))),
+                        @ApiResponse(responseCode = "400", description = "Archivo inválido o vacío"),
+                        @ApiResponse(responseCode = "404", description = "Producto no existe"),
+                        @ApiResponse(responseCode = "413", description = "Archivo demasiado grande"),
+                        @ApiResponse(responseCode = "500", description = "Error interno al procesar imagen")
+        })
+        public ResponseEntity<ImageDto> upload(
+                        @Parameter(description = "ID del producto", example = "5") @PathVariable Long productId,
+
+                        @Parameter(description = "Archivo de imagen a subir") @RequestParam("file") MultipartFile file,
+
+                        @Parameter(description = "Marcar como imagen primaria") @RequestParam(name = "primary", defaultValue = "true") boolean primary)
+                        throws IOException {
+
+                ProductImage img = imageStorageService.store(productId, file, primary);
+
+                return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(ImageMapper.toDto(img));
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
-    }
-
-    // =========================
-    // Auxiliar para sacar extensión
-    // =========================
-    private String getExt(String url) {
-        int i = url.lastIndexOf('.');
-        String ext = (i > 0) ? url.substring(i + 1).toLowerCase() : "jpg";
-        // Limpiar query params tipo ?width=...
-        int q = ext.indexOf('?');
-        if (q >= 0) {
-            ext = ext.substring(0, q);
+        // ============================================================
+        // DTO para pedir imagen remota
+        // ============================================================
+        public record ImageUrlRequest(@NotBlank String url) {
         }
-        return ext;
-    }
+
+        // ============================================================
+        // SUBIR IMAGEN DESDE UNA URL REMOTA
+        // ============================================================
+        @PostMapping("/from-url")
+        @Operation(summary = "Subir imagen desde URL", description = "Descarga una imagen remota, la guarda localmente y crea el ProductImage asociado.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "201", description = "Imagen descargada y registrada", content = @Content(schema = @Schema(implementation = ImageDto.class))),
+                        @ApiResponse(responseCode = "400", description = "URL inválida o no accesible"),
+                        @ApiResponse(responseCode = "404", description = "Producto no existe"),
+                        @ApiResponse(responseCode = "500", description = "Error interno al procesar imagen")
+        })
+        public ResponseEntity<ImageDto> fromUrl(
+                        @Parameter(description = "ID del producto", example = "5") @PathVariable Long productId,
+
+                        @Valid @RequestBody ImageUrlRequest request,
+
+                        @Parameter(description = "Marcar como imagen primaria") @RequestParam(name = "primary", defaultValue = "true") boolean primary)
+                        throws IOException {
+
+                URI uri = URI.create(request.url());
+                String ext = getExt(request.url());
+                String fileName = UUID.randomUUID() + "." + ext;
+
+                // Carpeta temporal
+                Path tempDir = Files.createTempDirectory("rt-img-" + Instant.now().toEpochMilli());
+                Path tempFile = tempDir.resolve(fileName);
+
+                // Descargar archivo remoto
+                try (InputStream in = uri.toURL().openStream()) {
+                        Files.copy(in, tempFile);
+                }
+
+                // Guardar usando el servicio central
+                ProductImage img;
+                try {
+                        img = imageStorageService.storeFromPath(productId, tempFile, primary);
+                } finally {
+                        Files.deleteIfExists(tempFile);
+                        Files.deleteIfExists(tempDir);
+                }
+
+                return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(ImageMapper.toDto(img));
+        }
+
+        // ============================================================
+        // UTILIDAD: OBTENER EXTENSIÓN DE UNA URL
+        // ============================================================
+        private String getExt(String url) {
+                int i = url.lastIndexOf('.');
+                String ext = (i > 0) ? url.substring(i + 1).toLowerCase() : "jpg";
+
+                int q = ext.indexOf('?');
+                if (q >= 0) {
+                        ext = ext.substring(0, q);
+                }
+
+                return ext;
+        }
 }

@@ -2,6 +2,7 @@ package com.redthread.catalog.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redthread.catalog.controller.dto.CreateVariantReq;
+import com.redthread.catalog.model.Product;
 import com.redthread.catalog.model.Variant;
 import com.redthread.catalog.model.enums.SizeType;
 import com.redthread.catalog.repository.VariantRepository;
@@ -34,39 +35,34 @@ class VariantControllerTest {
 
     @Test
     void create_returns201() throws Exception {
-        // El controller ya no devuelve el objeto, pero igual mockeamos el service
         Variant v = Variant.builder()
                 .id(5L)
-                .sku("SKU-1")
-                .color("NEGRO")
+                .product(Product.builder().id(10L).build())
+                .sizeType(SizeType.LETTER)
                 .sizeValue("M")
+                .color("NEGRO")
+                .sku("SKU-1")
                 .build();
 
         when(service.create(any(CreateVariantReq.class))).thenReturn(v);
 
         CreateVariantReq req = new CreateVariantReq(
-                10L,
-                SizeType.LETTER,
-                "M",
-                "NEGRO",
-                null,
-                2
+                10L, SizeType.LETTER, "M", "NEGRO", null, 2
         );
 
         mvc.perform(post("/variants")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(om.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                // ahora el endpoint devuelve ResponseEntity<Void>, por lo que el cuerpo es vacío
-                .andExpect(content().string(""));
+                .andExpect(status().isCreated());
     }
 
     @Test
-    void list_byProduct_returnsList() throws Exception {
-        when(service.byProduct(10L)).thenReturn(List.of(
-                Variant.builder().id(1L).build(),
-                Variant.builder().id(2L).build()
-        ));
+    void list_byProduct_returns200() throws Exception {
+        when(service.byProduct(10L))
+                .thenReturn(List.of(
+                        Variant.builder().id(1L).build(),
+                        Variant.builder().id(2L).build()
+                ));
 
         mvc.perform(get("/variants").param("productId", "10"))
                 .andExpect(status().isOk())

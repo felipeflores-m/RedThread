@@ -37,28 +37,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(Customizer.withDefaults())
-            .csrf(csrf -> csrf.disable())
-            .oauth2ResourceServer(oauth -> oauth
-                .jwt(Customizer.withDefaults())
-            )
-            .authorizeHttpRequests(reg -> reg
+                .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
 
-                // Rutas públicas
-                .requestMatchers("/categories/**").permitAll()
-                .requestMatchers("/brands/**").permitAll()
-                .requestMatchers("/products/**").permitAll()
-                .requestMatchers("/images/**").permitAll()
+                // ============================
+                // Resource Server (JWT)
+                // ============================
+                .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
 
-                // Variants GET → público (tienda)
-                .requestMatchers("/variants").permitAll()
-                .requestMatchers("/variants/*").permitAll()
+                // ============================
+                // Authorization Rules
+                // ============================
+                .authorizeHttpRequests(auth -> auth
 
-                // Variants POST → requiere token
-                .requestMatchers("/variants").authenticated()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**")
+                        .permitAll()
+                        // ----------- RUTAS PÚBLICAS -----------
+                        // imágenes
+                        .requestMatchers("/media/**").permitAll()
 
-                .anyRequest().authenticated()
-            );
+                        // catálogo público
+                        .requestMatchers("/products/**").permitAll()
+                        .requestMatchers("/categories/**").permitAll()
+                        .requestMatchers("/brands/**").permitAll()
+
+                        // variants GET = público
+                        .requestMatchers("/variants/**").permitAll()
+
+                        // ----------- RUTAS PROTEGIDAS (solo POST/PUT/DELETE) -----------
+                        .requestMatchers("/variants").authenticated()
+                        .requestMatchers("/products").authenticated()
+
+                        // cualquier otra ruta = requiere token
+                        .anyRequest().authenticated());
 
         return http.build();
     }
@@ -70,16 +84,24 @@ public class SecurityConfig {
         return decoder;
     }
 
+    // ============================
+    // CORS
+    // ============================
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173")
+                        .allowedOrigins(
+                                "http://localhost:5173",
+                                "http://localhost:3000",
+                                "http://127.0.0.1:3000",
+                                "http://10.0.2.2:3000",
+                                "*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(false);
             }
         };
     }
