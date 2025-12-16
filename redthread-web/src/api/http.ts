@@ -1,6 +1,8 @@
 // src/api/http.ts
 import axios from "axios";
 
+
+
 console.log("Auth API base:", import.meta.env.VITE_AUTH_API);
 
 const authBase =

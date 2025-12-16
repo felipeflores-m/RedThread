@@ -12,6 +12,10 @@ import { CatalogApi } from "@/api/catalog.api";
 import type { Product, Category, Brand } from "@/api/catalog.api";
 import { UsersApi } from "@/api/user.api";
 import type { UserDto } from "@/api/user.api";
+import type { CreateProductReq } from "@/api/catalog.api";
+type Gender = CreateProductReq["gender"];
+
+
 
 export default function AdminVista() {
   const navigate = useNavigate();
@@ -26,15 +30,24 @@ export default function AdminVista() {
   const [loadingUsers, setLoadingUsers] = useState(false);
 
 
-  const [form, setForm] = useState({
-    nombre: "",
-    descripcion: "",
-    categoryId: 0,
-    brandId: 0,
-    precioBase: "",
-    featured: false,     // NUEVO
-    gender: "HOMBRE",    // NUEVO
-  });
+  const [form, setForm] = useState<{
+  nombre: string;
+  descripcion: string;
+  categoryId: number;
+  brandId: number;
+  precioBase: string;
+  featured: boolean;
+  gender: Gender;
+}>({
+  nombre: "",
+  descripcion: "",
+  categoryId: 0,
+  brandId: 0,
+  precioBase: "",
+  featured: false,
+  gender: "HOMBRE",
+});
+
 
   // === Cargar productos ===
   useEffect(() => {
@@ -380,12 +393,14 @@ export default function AdminVista() {
                 Género
                 <select
                   value={form.gender}
-                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                  className="mt-1 bg-[#1A1A1A] border border-[#444] p-2 rounded text-white w-full"
-                >
-                  <option value="HOMBRE">Hombre</option>
-                  <option value="MUJER">Mujer</option>
-                </select>
+                      onChange={(e) =>
+                        setForm({ ...form, gender: e.target.value as Gender })
+                      }
+                      className="mt-1 bg-[#1A1A1A] border border-[#444] p-2 rounded text-white w-full"
+                    >
+                      <option value="HOMBRE">Hombre</option>
+                      <option value="MUJER">Mujer</option>
+                    </select>
               </label>
 
               {/* FEATURED */}

@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": [
+    "src/api/http.ts",
+    "src/api/**/*.api.ts",
+    "src/store/**/*.store.ts",
+    "src/pages/**",
+    "src/components/**"
+  ]
+}
