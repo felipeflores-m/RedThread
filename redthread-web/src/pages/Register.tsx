@@ -1,8 +1,10 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AuthApi } from "@/api/auth.api";
 import { useAuth } from "@/store/auth.store";
+
 
 export default function Register() {
   const navigate = useNavigate();
@@ -44,20 +46,26 @@ export default function Register() {
       await loadMe();
 
       navigate("/");
-    } catch (err: any) {
-      if (axios.isAxiosError(err)) {
-        const msg =
-          (err.response?.data as any)?.message ||
-          (typeof err.response?.data === "string"
-            ? err.response.data
-            : null);
-        setShowError(
-          msg || "No se pudo crear la cuenta. Revisa los datos e inténtalo nuevamente."
-        );
-      } else {
-        setShowError("Ocurrió un error inesperado. Inténtalo otra vez.");
-      }
-    } finally {
+    } catch (err: unknown) {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as
+      | { message?: string }
+      | string
+      | undefined;
+
+    const msg =
+      typeof data === "string"
+        ? data
+        : data?.message;
+
+    setShowError(
+      msg || "No se pudo crear la cuenta. Revisa los datos e inténtalo nuevamente."
+    );
+  } else {
+    setShowError("Ocurrió un error inesperado. Inténtalo otra vez.");
+  }
+}
+ finally {
       setLoading(false);
     }
   };

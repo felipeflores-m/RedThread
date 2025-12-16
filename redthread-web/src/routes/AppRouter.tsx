@@ -23,6 +23,9 @@ import PrivacyPage from "@/pages/PrivacyPage";
 import SuccessPage from "@/pages/SuccessPage";
 import CheckoutPage from "@/pages/CheckoutPage";
 
+import AdminRoute from "@/routes/AdminRoute";
+
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -39,8 +42,10 @@ export default function AppRouter() {
 
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/admin" element={<AdminVista />} />
-            <Route path="/product-wizard" element={<ProductWizard />} />
+            <Route path="/admin" element={<AdminRoute><AdminVista /></AdminRoute>}/>
+
+
+            <Route path="/product-wizard" element={<AdminRoute><ProductWizard /></AdminRoute>}/>
             <Route path="/cart" element={<CartPage />} />
 
             {/* Empresa */}
