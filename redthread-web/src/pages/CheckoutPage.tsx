@@ -1,16 +1,19 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCart } from "@/store/cart.store";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const { clear } = useCart();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/success");
+      clear();                // ✅ VACÍA EL CARRITO
+      navigate("/success");   // redirige a éxito
     }, 2500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [clear, navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">

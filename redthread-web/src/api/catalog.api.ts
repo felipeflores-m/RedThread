@@ -90,7 +90,8 @@ export const CatalogApi = {
   /* ---- PRODUCTOS ---- */
   listProducts: () => http.catalog.get<Product[]>("/products"),
 
-  getProduct: (id: number) => http.catalog.get<Product>(`/products/${id}`),
+  getProduct: (id: number) =>
+    http.catalog.get<Product>(`/products/${id}`),
 
   createProduct: (data: CreateProductReq) =>
     http.catalog.post<Product>("/products", data),
@@ -98,7 +99,8 @@ export const CatalogApi = {
   updateProduct: (id: number, data: CreateProductReq) =>
     http.catalog.put<Product>(`/products/${id}`, data),
 
-  deleteProduct: (id: number) => http.catalog.delete(`/products/${id}`),
+  deleteProduct: (id: number) =>
+    http.catalog.delete(`/products/${id}`),
 
   /* ---- VARIANTES ---- */
   listVariantsByProduct: (productId: number) =>
@@ -108,15 +110,17 @@ export const CatalogApi = {
     http.catalog.post("/variants", data),
 
   /* ---- IMÁGENES ---- */
+  listProductImages: (productId: number) =>
+    http.catalog.get<ProductImage[]>(`/products/${productId}/images`),
+
   uploadImage: (productId: number, file: File) => {
     const form = new FormData();
     form.append("file", file);
+
     return http.catalog.post<ProductImage[]>(
       `/products/${productId}/images/upload`,
       form,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      }
+      { headers: { "Content-Type": "multipart/form-data" } }
     );
   },
 
@@ -127,14 +131,32 @@ export const CatalogApi = {
     ),
 
   markPrimaryImage: (productId: number, imageId: number) =>
-    http.catalog.post(`/products/${productId}/images/${imageId}/primary`),
+    http.catalog.post(
+      `/products/${productId}/images/${imageId}/primary`
+    ),
 
   deleteImage: (productId: number, imageId: number) =>
-    http.catalog.delete(`/products/${productId}/images/${imageId}`),
+    http.catalog.delete(
+      `/products/${productId}/images/${imageId}`
+    ),
 
+  /* ---- CUPONES ---- */
   validateCoupon: (code: string, productIds: number[]) =>
     http.catalog.post<{ valid: boolean; discountPct?: number }>(
       "/coupons/validate",
       { code, productIds }
     ),
+
+    decreaseStock: async (variantId: number, qty: number) => {
+    // Intento 1 (mi sugerencia anterior)
+    try {
+      return await http.catalog.post(`/variants/${variantId}/decrease-stock`, { qty });
+    } catch (e: any) {
+      if (e?.response?.status !== 404) throw e;
+    }
+
+    // Intento 2 (común cuando hay inventory separado)
+    return await http.catalog.post(`/inventory/${variantId}/decrease`, { qty });
+  },
+
 };

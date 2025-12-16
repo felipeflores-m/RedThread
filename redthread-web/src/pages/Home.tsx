@@ -20,19 +20,47 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("ALL");
 
-  // Cargar productos desde el catálogo
+  // Cargar productos + imágenes por producto (porque /products no trae images)
   useEffect(() => {
-    setLoadingProducts(true);
-    CatalogApi.listProducts()
-      .then((res) => {
+    let alive = true;
+
+    async function load() {
+      setLoadingProducts(true);
+
+      try {
+        const res = await CatalogApi.listProducts();
         const list = Array.isArray(res.data) ? res.data : [];
-        setProducts(list);
-      })
-      .catch((err) => {
+
+        // Pedimos imágenes por producto y las inyectamos en el mismo objeto
+        const withImages: Product[] = await Promise.all(
+          list.map(async (p) => {
+            try {
+              const imgRes = await CatalogApi.listProductImages(p.id);
+              const imgs = Array.isArray(imgRes.data) ? imgRes.data : [];
+              return { ...p, images: imgs } as Product;
+            } catch (e) {
+              return { ...p, images: [] } as Product;
+            }
+          })
+        );
+
+        if (!alive) return;
+        setProducts(withImages);
+      } catch (err) {
         console.error("Error cargando productos para Home:", err);
+        if (!alive) return;
         setProducts([]);
-      })
-      .finally(() => setLoadingProducts(false));
+      } finally {
+        if (!alive) return;
+        setLoadingProducts(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   // Cargar categorías
@@ -191,20 +219,21 @@ export default function Home() {
           </p>
         ) : (
           <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {featured.map((p) => (
-              <ProductCard
-                key={p.id}
-                name={p.name}
-                priceCLP={Number(p.basePrice ?? 0)}
-                image={
-                  p.images && p.images.length > 0
-                    ? p.images[0].publicUrl
-                    : undefined
-                }
-                onAdd={() => handleAddToCart(p)}
-                onClick={() => handleOpenDetail(p)}
-              />
-            ))}
+            {featured.map((p) => {
+              const firstImage =
+                p.images && p.images.length > 0 ? p.images[0].publicUrl : undefined;
+
+              return (
+                <ProductCard
+                  key={p.id}
+                  name={p.name}
+                  priceCLP={Number(p.basePrice ?? 0)}
+                  image={buildCatalogImageUrl(firstImage)}
+                  onAdd={() => handleAddToCart(p)}
+                  onClick={() => handleOpenDetail(p)}
+                />
+              );
+            })}
           </div>
         )}
       </section>
